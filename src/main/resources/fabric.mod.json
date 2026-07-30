@@ -1,0 +1,46 @@
+{
+	"schemaVersion": 1,
+	"id": "absolutecinema",
+	"version": "${version}",
+	"name": "Absolute Cinema Camera",
+	"description": "Turns the game into a film: letterbox bars, hidden HUD, colour grading, depth of field, smoothed camera moves and a director that flies cinematic shots around the scene — including whoever is talking on Simple Voice Chat.",
+	"authors": [
+		"Glam_Ardor"
+	],
+	"contact": {
+		"sources": "https://codeberg.org/Glam_Ardor/absolute-cinema-camera",
+		"issues": "https://codeberg.org/Glam_Ardor/absolute-cinema-camera/issues",
+		"homepage": "https://modrinth.com/mod/absolute-cinema-camera"
+	},
+	"license": "LGPL-3.0-or-later",
+	"icon": "assets/absolutecinema/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.glamardor.absolutecinema.AbsoluteCinemaClient"
+		],
+		"modmenu": [
+			"com.glamardor.absolutecinema.compat.AbsoluteCinemaModMenu"
+		],
+		"voicechat": [
+			"com.glamardor.absolutecinema.voice.CinemaVoicechatPlugin"
+		]
+	},
+	"mixins": [
+		{
+			"config": "absolutecinema.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": ">=1.21.6 <1.21.9",
+		"fabric-api": "*",
+		"java": ">=21"
+	},
+	"suggests": {
+		"cloth-config": "*",
+		"modmenu": "*",
+		"voicechat": "*"
+	}
+}

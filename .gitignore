@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Dev runtime: worlds, options, the mods dropped in for testing
+run/
+run2/
+
+# Third party jars kept locally for the dev runtime only
+libs/
+mods-disabled/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+bin/
+
+# OS
+.DS_Store
+Thumbs.db

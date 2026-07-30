@@ -1,0 +1,91 @@
+plugins {
+	id 'fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+loom {
+	runs {
+		client {
+			// Development only: makes the post processor narrate what it is doing.
+			vmArg "-Dabsolutecinema.debug=true"
+			// Skip the menus and drop straight into the test world.
+			programArgs "--quickPlaySingleplayer", "New World"
+		}
+		// A second player for testing the group framing and the speaker focus. Its LAN port
+		// changes every time the world is opened to the network — pass -Placport=NNNNN.
+		clientTwo {
+			client()
+			name = "Second Client"
+			runDir = "run2"
+			vmArg "-Dabsolutecinema.debug=true"
+			programArgs "--quickPlayMultiplayer",
+					"localhost:" + (project.findProperty("lanport") ?: "25565")
+		}
+	}
+}
+
+repositories {
+	maven {
+		name = 'Terraformers'
+		url = 'https://maven.terraformersmc.com/'
+	}
+	maven {
+		name = 'Shedaniel'
+		url = 'https://maven.shedaniel.me/'
+	}
+	maven {
+		name = 'Henkelmax'
+		url = 'https://maven.maxhenkel.de/repository/public'
+	}
+	flatDir {
+		dirs 'libs'
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Cloth Config — optional at runtime, compiled against. Deliberately NOT on the dev runtime
+	// at the moment: that is how the built-in fallback settings screen gets tested.
+	modCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+		exclude(group: "net.fabricmc.fabric-api")
+	}
+
+	// Mod Menu — optional at runtime.
+	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+	// Simple Voice Chat plugin API — plain java, no minecraft classes, so no remapping.
+	compileOnly "de.maxhenkel.voicechat:voicechat-api:${project.voicechat_api_version}"
+
+	// Simple Voice Chat itself is NOT a gradle dependency: its jar is built with Loom 1.17,
+	// which Loom 1.11 refuses to remap. It lives in run/mods instead, where the loader's own
+	// dev-time remapper handles it. See libs/ for the downloaded copy.
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
