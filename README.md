@@ -76,7 +76,9 @@ suits — the bright and stylised looks stay sharp across the whole frame even w
   for a couple of seconds, then returns to the wide coverage.
 - *Dialogue* — shot-reverse-shot, the way films have covered conversations for a century: hold
   the speaker, cut to the listener for their reaction, and every fourth cut or so pull back into
-  a two shot holding both. The camera picks one side of the line between the pair and never
+  a two shot holding both. Who counts as the speaker comes from Simple Voice Chat when it is
+  installed; without it the mode simply alternates between the two nearest participants, so it
+  is still useful on a text-only server. The camera picks one side of the line between the pair and never
   crosses it, because crossing it makes them swap sides of the screen between cuts and the scene
   stops reading. Cuts here are instant on purpose — gliding between opposite angles would fly
   straight through the people.
@@ -158,7 +160,11 @@ own built-in screen, which applies everything immediately.
 ## Requirements
 
 - Minecraft 1.21.6 – 1.21.8, Fabric Loader 0.16+, Fabric API
-- Optional: Cloth Config, Mod Menu, Simple Voice Chat (only the speaker focus mode needs it)
+- Optional: Cloth Config (fuller settings screen), Mod Menu (settings button)
+- Optional: [Simple Voice Chat](https://modrinth.com/mod/simple-voice-chat) — what the speaker
+  focus and dialogue modes use to know who is actually talking. Install it on the server as usual;
+  this mod only listens on your own client, and nothing here needs a server-side plugin. Both
+  modes still work without it, they just cannot follow a voice.
 
 Other versions need a separate build: 1.21–1.21.5 use the old shader system, and 1.21.9+
 reworked the renderer again.
