@@ -63,11 +63,30 @@ public final class CameraDirector {
 	private static final double SIDE_ANGLE = 82.0;
 	private static final float SIDE_SWAP_SECONDS = 22.0f;
 
-	/** Shortest a cut to a new speaker may last, so cross-talk cannot make the camera stutter. */
-	private static final float MIN_SPEAKER_CUT = 1.6f;
-
 	/** Past this much movement in one frame we assume a teleport and stop interpolating. */
 	private static final double TELEPORT_DISTANCE = 16.0;
+
+	/**
+	 * How the frame follows the way people are facing.
+	 *
+	 * <p>A shot is built around an angle, and that angle used to be read off the subject's own
+	 * yaw every frame — so the person being filmed was steering the camera with their mouse, for
+	 * everybody watching. Now the angle belongs to the shot: it is fixed when the shot is
+	 * composed, ignores anything smaller than the dead zone, and past that turns no faster than
+	 * the rate below. Someone glancing around no longer moves the camera at all; someone turning
+	 * right round is followed slowly, like an operator would.
+	 */
+	private static final double FACING_DEAD_ZONE = 35.0 * Math.PI / 180.0;
+	private static final double FACING_FOLLOW_RATE = 11.0 * Math.PI / 180.0;
+
+	/** Leave this much of the frame empty around the outermost person. */
+	private static final double FRAME_MARGIN = 0.86;
+
+	/** Half the width of a person, for the fit test. */
+	private static final double BODY_HALF_WIDTH = 0.42;
+
+	/** Furthest the fit test will pull the camera back before giving up and recomposing. */
+	private static final double MAX_FIT_PULLBACK = 9.0;
 
 	private final Random random = new Random();
 
@@ -102,6 +121,10 @@ public final class CameraDirector {
 	private float lastRoomProbe = -10.0f;
 	private float crampedFor;
 
+	/** How long the current shot has had most of the scene hidden behind something. */
+	private float blindFor;
+	private float lastVisibilityProbe = -10.0f;
+
 	/** Clear distance in each of the eight probe directions — lets shots pick the open side. */
 	private final double[] dirClearances = new double[8];
 
@@ -119,6 +142,9 @@ public final class CameraDirector {
 	/** Side track mode: which side of the scene we are running along, and when it last changed. */
 	private double trackSide = 1.0;
 	private float lastSideSwap = -100.0f;
+	/** Slow-following copy of the scene's facing, used by the modes that have no shot to hold it. */
+	private double trackedFacing;
+	private boolean hasTrackedFacing;
 
 	/** Dialogue mode state. */
 	private DialoguePhase dialoguePhase = DialoguePhase.TWO_SHOT;
@@ -156,8 +182,10 @@ public final class CameraDirector {
 		blendDuration = 0.0f;
 		clampOrigin = null;
 		crampedFor = 0.0f;
+		blindFor = 0.0f;
 		tripodPos = null;
 		lastSideSwap = -100.0f;
+		hasTrackedFacing = false;
 		dialogueFirst = null;
 		dialogueSecond = null;
 		dialoguePhaseLeft = 0.0f;
@@ -199,19 +227,20 @@ public final class CameraDirector {
 		CinemaConfig config = CinemaConfig.get();
 
 		UUID speakerId = config.mode.usesVoiceChat()
-				? SpeakerTracker.getCurrentSpeaker(config.speakerHoldSeconds)
+				? SpeakerTracker.getCurrentSpeaker(config.speakerHoldSeconds, config.speakerHandoverSeconds,
+						config.maxSpeakerFocusSeconds, config.speakerBreakSeconds)
 				: null;
 		Entity candidate = speakerId == null ? null : findSpeaker(client, config, speakerId);
 
 		// Anti-chatter: when people talk over each other the tracker can flip between them several
 		// times a second, and a camera that follows every flip is unwatchable. A cut has to stand
-		// for at least MIN_SPEAKER_CUT before the next one is allowed; whoever holds the floor when
+		// for at least minShotSeconds before the next one is allowed; whoever holds the floor when
 		// that time is up gets the frame.
 		boolean speakerChanged = false;
 		UUID candidateId = candidate == null ? null : candidate.getUuid();
 		boolean heldGone = heldSpeaker != null && !heldSpeaker.isAlive();
 		if (!Objects.equals(candidateId, lastSpeaker) || heldGone) {
-			if (clock - lastSpeakerCut >= MIN_SPEAKER_CUT || heldGone || heldSpeaker == null) {
+			if (clock - lastSpeakerCut >= config.minShotSeconds || heldGone || heldSpeaker == null) {
 				lastSpeaker = candidateId;
 				lastSpeakerCut = clock;
 				heldSpeaker = candidate;
@@ -247,14 +276,17 @@ public final class CameraDirector {
 		float speed = Math.max(0.05f, config.shotSpeed);
 		shotElapsed += dt * speed;
 
-		// A shot that has spent a second and a half jammed against a wall is not going to get
-		// better — pick a different angle instead of sitting in the corner.
-		boolean stuck = crampedFor > 1.5f;
+		// A shot that has spent a second and a half jammed against a wall — or one that has been
+		// looking at the back of a pillar while the scene happens behind it — is not going to get
+		// better. Pick a different angle instead of sitting there.
+		boolean stuck = crampedFor > 1.5f || blindFor > 1.0f;
 		if (stuck) {
-			crampedFor = 0.0f;
 			if (DEBUG) {
-				AbsoluteCinema.LOGGER.info("[camera] shot was stuck against geometry, recomposing");
+				AbsoluteCinema.LOGGER.info("[camera] recomposing: {}",
+						blindFor > 1.0f ? "the scene was out of sight" : "shot was stuck against geometry");
 			}
+			crampedFor = 0.0f;
+			blindFor = 0.0f;
 		}
 
 		if (shot == null || shotElapsed >= shot.duration || speakerChanged || stuck) {
@@ -268,7 +300,47 @@ public final class CameraDirector {
 
 		Pose target = evaluate(shot, shotElapsed / shot.duration, scene, config);
 		applyPose(client, config, dt, target);
+		probeVisibility(client, scene);
 		return true;
+	}
+
+	/**
+	 * Is the scene actually on screen? Framing maths only knows where people are, not what is
+	 * standing between them and the lens — a pillar, a doorway or a staircase can leave a
+	 * perfectly composed shot of nothing at all. A few rays a second are enough to notice, and
+	 * noticing is all it takes: the shot is then recomposed from somewhere else.
+	 */
+	private void probeVisibility(MinecraftClient client, Scene scene) {
+		if (clock - lastVisibilityProbe < 0.3f || client.world == null || client.player == null) {
+			return;
+		}
+		lastVisibilityProbe = clock;
+
+		int visible = 0;
+		int total = 0;
+		// Heads only, and at most a handful of them: this runs while the camera is flying.
+		for (int i = 1; i < scene.points.size() && total < 8; i += 2) {
+			Vec3d head = scene.points.get(i);
+			if (pos.squaredDistanceTo(head) < 0.25) {
+				visible++;
+				total++;
+				continue;
+			}
+			total++;
+			HitResult hit = client.world.raycast(new RaycastContext(pos, head,
+					RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player));
+			if (hit.getType() != HitResult.Type.BLOCK) {
+				visible++;
+			}
+		}
+		if (total == 0) {
+			return;
+		}
+		if (visible * 2 < total) {
+			blindFor += 0.3f;
+		} else {
+			blindFor = 0.0f;
+		}
 	}
 
 	/** Wall clamping, blending and the follow damping — shared by every mode. */
@@ -338,15 +410,24 @@ public final class CameraDirector {
 	 * often, and immediately if the current side runs out of room.
 	 */
 	private Pose sideTrackPose(Scene scene, CinemaConfig config, float dt) {
+		// Same rule as the composed shots: the angle is the camera's, not the subject's, so
+		// nobody steers the shot by turning their head.
+		if (!hasTrackedFacing) {
+			trackedFacing = scene.faceYaw;
+			hasTrackedFacing = true;
+		} else {
+			trackedFacing = followAngle(trackedFacing, scene.faceYaw, dt);
+		}
+
 		if (clock - lastSideSwap > SIDE_SWAP_SECONDS) {
 			lastSideSwap = clock;
-			double left = clearanceTowards(scene.faceYaw + SIDE_ANGLE * DEG);
-			double right = clearanceTowards(scene.faceYaw - SIDE_ANGLE * DEG);
+			double left = clearanceTowards(trackedFacing + SIDE_ANGLE * DEG);
+			double right = clearanceTowards(trackedFacing - SIDE_ANGLE * DEG);
 			trackSide = left >= right ? 1.0 : -1.0;
 		}
 
 		double distance = groupDistance(scene, config);
-		double angle = scene.faceYaw + trackSide * SIDE_ANGLE * DEG;
+		double angle = trackedFacing + trackSide * SIDE_ANGLE * DEG;
 		Vec3d anchor = scene.center.add(
 				-Math.sin(angle) * distance,
 				scene.eyeHeight + 0.2,
@@ -384,14 +465,14 @@ public final class CameraDirector {
 	private Pose dialoguePose(MinecraftClient client, Scene scene, @Nullable Entity speaker,
 			boolean speakerChanged, CinemaConfig config, float dt) {
 		Entity first = speaker != null ? speaker : client.player;
-		Entity second = findConversationPartner(client, first, config);
+		Entity second = keepPartner(client, first, config);
 		if (first == null || second == null) {
 			return null;
 		}
 
 		// A new voice takes over the frame at once.
-		if (speakerChanged || dialoguePhaseLeft <= 0.0f || dialogueFirst == null
-				|| !dialogueFirst.isAlive() || dialogueSecond == null || !dialogueSecond.isAlive()) {
+		if (speakerChanged || dialoguePhaseLeft <= 0.0f || dialogueFirst != first
+				|| dialogueSecond != second || !dialogueFirst.isAlive() || !dialogueSecond.isAlive()) {
 			advanceDialoguePhase(first, second, speakerChanged);
 		}
 		dialoguePhaseLeft -= dt;
@@ -432,8 +513,42 @@ public final class CameraDirector {
 		return new Pose(withDrift(anchor, distance, config), subjectEye);
 	}
 
+	/**
+	 * The person on the other end of the conversation, held for as long as the pair is plausibly
+	 * still talking.
+	 *
+	 * <p>Re-picking every frame meant the choice moved with the subject's gaze, and since a new
+	 * pair means a new cut, someone glancing sideways could re-cut the whole scene. The pair only
+	 * changes when it has to: when the partner leaves, dies, or the conversation moves on.
+	 */
+	@Nullable
+	private Entity keepPartner(MinecraftClient client, @Nullable Entity subject, CinemaConfig config) {
+		if (subject == null) {
+			return null;
+		}
+		Entity known = null;
+		if (subject == dialogueFirst) {
+			known = dialogueSecond;
+		} else if (subject == dialogueSecond) {
+			// The other one started talking: same pair, the roles simply swap.
+			known = dialogueFirst;
+		}
+		if (known != null && known != subject && known.isAlive()
+				&& known.squaredDistanceTo(subject) <= config.sceneRadius * config.sceneRadius) {
+			return known;
+		}
+		return findConversationPartner(client, subject, config);
+	}
+
 	private void advanceDialoguePhase(Entity speaker, Entity partner, boolean speakerChanged) {
 		boolean sameParticipants = dialogueFirst == speaker && dialogueSecond == partner;
+		boolean swapped = dialogueFirst == partner && dialogueSecond == speaker && speaker != partner;
+		if (swapped) {
+			// The line runs the other way now, so the same physical side of the room is the
+			// opposite sign. Getting this wrong is exactly what crossing the line looks like.
+			dialogueSide = -dialogueSide;
+			sameParticipants = true;
+		}
 		dialogueFirst = speaker;
 		dialogueSecond = partner;
 
@@ -580,15 +695,20 @@ public final class CameraDirector {
 		double faceYaw = Math.atan2(sinYaw, cosYaw);
 
 		double spread = 0.0;
+		// Two points per person — the feet and the top of the head — are what the framing test
+		// has to keep on screen. Sampling the centre only is how people ended up cut in half.
+		List<Vec3d> points = new ArrayList<>(participants.size() * 2);
 		for (Entity entity : participants) {
 			Vec3d feet = entity.getLerpedPos(tickProgress);
 			double dx = feet.x - center.x;
 			double dz = feet.z - center.z;
 			spread = Math.max(spread, Math.sqrt(dx * dx + dz * dz));
+			points.add(feet.add(0.0, 0.1, 0.0));
+			points.add(feet.add(0.0, eyeOffset(entity) + 0.22, 0.0));
 		}
 
 		double room = measureRoom(world, self, center.add(0.0, eyeHeight, 0.0));
-		return new Scene(center, eyeHeight, spread, faceYaw, speaker, count, tickProgress, room);
+		return new Scene(center, eyeHeight, spread, faceYaw, speaker, count, tickProgress, room, points);
 	}
 
 	/**
@@ -706,6 +826,7 @@ public final class CameraDirector {
 		openOnFace = urgent && framingSpeaker;
 		shot = compose(client, scene, config);
 		shotElapsed = 0.0f;
+		blindFor = 0.0f;
 		lastType = shot.type;
 	}
 
@@ -901,25 +1022,35 @@ public final class CameraDirector {
 		double heightOffset = MathHelper.lerp(progress, s.startHeight, s.endHeight);
 
 		Vec3d target;
-		double facing;
+		double desiredFacing;
 		double distance;
+		boolean onFace = s.intimate && scene.speaker != null && scene.speaker.isAlive();
 
-		if (s.intimate && scene.speaker != null && scene.speaker.isAlive()) {
+		if (onFace) {
 			// Framed on one face: fixed distances, and the angle is measured off their own gaze.
 			target = scene.speaker.getLerpedPos(scene.tickProgress);
-			facing = scene.speaker.getYaw(scene.tickProgress) * DEG;
+			desiredFacing = scene.speaker.getYaw(scene.tickProgress) * DEG;
 			distance = MathHelper.lerp(progress, s.startDistance, s.endDistance);
 			heightOffset += eyeOffset(scene.speaker) - 0.08;
 			clampOrigin = target.add(0.0, eyeOffset(scene.speaker) - 0.08, 0.0);
 		} else {
 			target = scene.center;
-			facing = scene.faceYaw;
+			desiredFacing = scene.faceYaw;
 			distance = MathHelper.lerp(progress, s.startDistance, s.endDistance) * groupDistance(scene, config);
 			heightOffset += scene.eyeHeight - 0.10;
 			clampOrigin = target.add(0.0, scene.eyeHeight - 0.15, 0.0);
 		}
 
-		double angle = facing + azimuth;
+		// The shot owns its angle: whoever is on screen may look wherever they like without
+		// dragging the camera round with them.
+		if (!s.facingSet) {
+			s.facing = desiredFacing;
+			s.facingSet = true;
+		} else {
+			s.facing = followAngle(s.facing, desiredFacing, CinemaManager.getFrameDelta());
+		}
+
+		double angle = s.facing + azimuth;
 		Vec3d offset = new Vec3d(-Math.sin(angle) * distance, heightOffset, Math.cos(angle) * distance);
 		Vec3d anchor = s.worldLocked ? lockedAnchor(s, target, offset) : target.add(offset);
 
@@ -942,7 +1073,91 @@ public final class CameraDirector {
 			lookTarget = lookTarget.add(right.multiply(distance * s.framingOffset));
 		}
 
+		if (config.keepEveryoneInFrame && !onFace) {
+			anchor = fitEveryone(anchor, lookTarget, scene, config);
+		}
+
 		return new Pose(anchor, lookTarget);
+	}
+
+	/**
+	 * Backs the camera off along its own axis until every participant is inside the picture.
+	 *
+	 * <p>The old framing only knew how far apart people were standing, which says nothing about
+	 * how much of the lens they take up: three people spread across the lens need a very
+	 * different distance depending on whether the camera is looking along the line they form or
+	 * across it. This measures the real thing — each person's offset from the axis of the shot,
+	 * against the actual field of view — and moves back by exactly what is missing.
+	 *
+	 * <p>The letterbox is part of the sum: the mattes eat the top and bottom of the frame, so the
+	 * usable vertical angle is smaller than the game's field of view by however tall the bars are.
+	 */
+	private Vec3d fitEveryone(Vec3d anchor, Vec3d lookTarget, Scene scene, CinemaConfig config) {
+		if (scene.points.isEmpty()) {
+			return anchor;
+		}
+		MinecraftClient client = MinecraftClient.getInstance();
+		Vec3d forward = lookTarget.subtract(anchor);
+		if (forward.lengthSquared() < 1.0E-6) {
+			return anchor;
+		}
+		forward = forward.normalize();
+		Vec3d right = new Vec3d(-forward.z, 0.0, forward.x);
+		if (right.lengthSquared() < 1.0E-6) {
+			right = new Vec3d(1.0, 0.0, 0.0);
+		}
+		right = right.normalize();
+		Vec3d up = right.crossProduct(forward).normalize();
+
+		double fov = client.options.getFov().getValue();
+		double tanVertical = Math.tan(Math.toRadians(fov) * 0.5);
+		double aspect = client.getWindow().getFramebufferHeight() <= 0
+				? 16.0 / 9.0
+				: (double) client.getWindow().getFramebufferWidth() / client.getWindow().getFramebufferHeight();
+		double barShare = config.letterbox ? MathHelper.clamp(config.letterboxSize * 2.0f, 0.0f, 0.7f) : 0.0;
+		double tanUp = tanVertical * (1.0 - barShare) * FRAME_MARGIN;
+		double tanSide = tanVertical * aspect * FRAME_MARGIN;
+		if (tanUp < 1.0E-3 || tanSide < 1.0E-3) {
+			return anchor;
+		}
+
+		double needed = 0.0;
+		for (Vec3d point : scene.points) {
+			Vec3d delta = point.subtract(anchor);
+			double depth = delta.dotProduct(forward);
+			double horizontal = Math.abs(delta.dotProduct(right)) + BODY_HALF_WIDTH;
+			double vertical = Math.abs(delta.dotProduct(up));
+			// Pulling back by d adds d to every depth and leaves the offsets alone, so what is
+			// missing is simply the depth the widest offset asks for minus the depth we have.
+			needed = Math.max(needed, horizontal / tanSide - depth);
+			needed = Math.max(needed, vertical / tanUp - depth);
+		}
+		if (needed <= 0.0) {
+			return anchor;
+		}
+		// Backing off has a limit: somebody who wandered off behind the camera would otherwise
+		// send it into orbit. Past the limit the answer is a different angle, not a longer lens,
+		// so the shot is marked for recomposition instead.
+		if (needed > MAX_FIT_PULLBACK) {
+			blindFor += CinemaManager.getFrameDelta();
+			needed = MAX_FIT_PULLBACK;
+		}
+		return anchor.subtract(forward.multiply(needed));
+	}
+
+	/**
+	 * Turns an angle towards another one, ignoring small changes and never turning faster than
+	 * {@link #FACING_FOLLOW_RATE}. This is what keeps other people's mouse movement out of the
+	 * camera while still following someone who genuinely turns around.
+	 */
+	private static double followAngle(double current, double desired, float dt) {
+		double difference = MathHelper.wrapDegrees(Math.toDegrees(desired - current)) * DEG;
+		double magnitude = Math.abs(difference);
+		if (magnitude <= FACING_DEAD_ZONE) {
+			return current;
+		}
+		double step = Math.min(magnitude - FACING_DEAD_ZONE, FACING_FOLLOW_RATE * dt);
+		return current + Math.signum(difference) * step;
 	}
 
 	private Vec3d lockedAnchor(Shot s, Vec3d target, Vec3d offset) {
@@ -1036,7 +1251,8 @@ public final class CameraDirector {
 
 	/** Who is in front of the camera this frame, reduced to what the shots actually need. */
 	private record Scene(Vec3d center, double eyeHeight, double spread, double faceYaw,
-			@Nullable Entity speaker, int participants, float tickProgress, double roomRadius) {
+			@Nullable Entity speaker, int participants, float tickProgress, double roomRadius,
+			List<Vec3d> points) {
 	}
 
 	private static final class Shot {
@@ -1054,6 +1270,9 @@ public final class CameraDirector {
 		float seed;
 		boolean worldLocked;
 		boolean intimate;
+		/** World angle the shot is built around, owned by the shot rather than read off a player. */
+		double facing;
+		boolean facingSet;
 		@Nullable
 		Vec3d anchor;
 	}

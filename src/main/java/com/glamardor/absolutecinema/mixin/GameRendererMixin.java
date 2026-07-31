@@ -6,10 +6,12 @@ import com.glamardor.absolutecinema.render.CinemaPostProcessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -41,5 +43,30 @@ public class GameRendererMixin {
 		if (config.hideHand || config.mode.isDirected()) {
 			ci.cancel();
 		}
+	}
+
+	/**
+	 * The walking sway. It is applied to the view matrix rather than to the camera, which is why
+	 * smoothing the camera position never removed it — the picture kept rocking from side to side
+	 * on every step, and no camera on a real set does that.
+	 */
+	@Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
+	private void absolutecinema$noBob(MatrixStack matrices, float tickProgress, CallbackInfo ci) {
+		if (absolutecinema$stabilized()) {
+			ci.cancel();
+		}
+	}
+
+	/** Same for the jolt when something hits you: a camera does not flinch. */
+	@Inject(method = "tiltViewWhenHurt", at = @At("HEAD"), cancellable = true)
+	private void absolutecinema$noHurtTilt(MatrixStack matrices, float tickProgress, CallbackInfo ci) {
+		if (absolutecinema$stabilized()) {
+			ci.cancel();
+		}
+	}
+
+	@Unique
+	private boolean absolutecinema$stabilized() {
+		return CinemaManager.isVisible() && CinemaConfig.get().stabilizeCamera;
 	}
 }

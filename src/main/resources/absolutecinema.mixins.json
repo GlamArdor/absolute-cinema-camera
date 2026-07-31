@@ -3,7 +3,9 @@
 	"package": "com.glamardor.absolutecinema.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
+		"BlockEntityRenderDispatcherMixin",
 		"CameraMixin",
+		"EntityRenderDispatcherMixin",
 		"GameRendererMixin",
 		"InGameHudMixin"
 	],

@@ -102,6 +102,8 @@ final class ClothConfigScreens {
 				value -> config.rotationSmoothing = value, 0, 95));
 		firstPerson.addEntry(percent(entries, "position_smoothing", config.positionSmoothing, defaults.positionSmoothing,
 				value -> config.positionSmoothing = value, 0, 95));
+		firstPerson.addEntry(toggle(entries, "stabilize", config.stabilizeCamera, defaults.stabilizeCamera,
+				value -> config.stabilizeCamera = value));
 
 		ConfigCategory directed = builder.getOrCreateCategory(Text.translatable("absolutecinema.category.directed"));
 		directed.addEntry(seconds(entries, "shot_duration", config.shotDuration, defaults.shotDuration,
@@ -122,10 +124,24 @@ final class ClothConfigScreens {
 				value -> config.sceneRadius = value, 3, 48));
 		directed.addEntry(toggle(entries, "include_named", config.includeNamedEntities,
 				defaults.includeNamedEntities, value -> config.includeNamedEntities = value));
+		directed.addEntry(toggle(entries, "keep_everyone", config.keepEveryoneInFrame,
+				defaults.keepEveryoneInFrame, value -> config.keepEveryoneInFrame = value));
+		directed.addEntry(toggle(entries, "hide_blockers", config.hideNearbyBlockers,
+				defaults.hideNearbyBlockers, value -> config.hideNearbyBlockers = value));
+		directed.addEntry(blocks(entries, "blocker_distance", config.blockerDistance, defaults.blockerDistance,
+				value -> config.blockerDistance = value, 1, 5));
 
 		ConfigCategory speaker = builder.getOrCreateCategory(Text.translatable("absolutecinema.category.speaker"));
 		speaker.addEntry(seconds(entries, "speaker_hold", config.speakerHoldSeconds, defaults.speakerHoldSeconds,
-				value -> config.speakerHoldSeconds = value, 50, 1500));
+				value -> config.speakerHoldSeconds = value, 20, 1500));
+		speaker.addEntry(seconds(entries, "speaker_handover", config.speakerHandoverSeconds,
+				defaults.speakerHandoverSeconds, value -> config.speakerHandoverSeconds = value, 0, 300));
+		speaker.addEntry(seconds(entries, "min_shot", config.minShotSeconds, defaults.minShotSeconds,
+				value -> config.minShotSeconds = value, 0, 500));
+		speaker.addEntry(seconds(entries, "max_focus", config.maxSpeakerFocusSeconds,
+				defaults.maxSpeakerFocusSeconds, value -> config.maxSpeakerFocusSeconds = value, 0, 12000));
+		speaker.addEntry(seconds(entries, "speaker_break", config.speakerBreakSeconds,
+				defaults.speakerBreakSeconds, value -> config.speakerBreakSeconds = value, 100, 6000));
 		speaker.addEntry(blocks(entries, "speaker_distance", config.speakerMaxDistance, defaults.speakerMaxDistance,
 				value -> config.speakerMaxDistance = value, 4, 64));
 		speaker.addEntry(toggle(entries, "rule_of_thirds", config.ruleOfThirds, defaults.ruleOfThirds,

@@ -90,6 +90,7 @@ public class FallbackConfigScreen extends Screen {
 				value -> config.rotationSmoothing = value));
 		list.addWidget(percentSlider("position_smoothing", config.positionSmoothing, 0.0f, 0.95f,
 				value -> config.positionSmoothing = value));
+		list.addWidget(toggle("stabilize", () -> config.stabilizeCamera, value -> config.stabilizeCamera = value));
 
 		list.addHeader(Text.translatable("absolutecinema.category.directed"));
 		list.addWidget(secondsSlider("shot_duration", config.shotDuration, 2.0f, 60.0f,
@@ -107,10 +108,24 @@ public class FallbackConfigScreen extends Screen {
 				value -> config.sceneRadius = value));
 		list.addWidget(toggle("include_named", () -> config.includeNamedEntities,
 				value -> config.includeNamedEntities = value));
+		list.addWidget(toggle("keep_everyone", () -> config.keepEveryoneInFrame,
+				value -> config.keepEveryoneInFrame = value));
+		list.addWidget(toggle("hide_blockers", () -> config.hideNearbyBlockers,
+				value -> config.hideNearbyBlockers = value));
+		list.addWidget(blocksSlider("blocker_distance", config.blockerDistance, 0.5f, 5.0f,
+				value -> config.blockerDistance = value));
 
 		list.addHeader(Text.translatable("absolutecinema.category.speaker"));
-		list.addWidget(secondsSlider("speaker_hold", config.speakerHoldSeconds, 0.5f, 15.0f,
+		list.addWidget(secondsSlider("speaker_hold", config.speakerHoldSeconds, 0.2f, 15.0f,
 				value -> config.speakerHoldSeconds = value));
+		list.addWidget(secondsSlider("speaker_handover", config.speakerHandoverSeconds, 0.0f, 3.0f,
+				value -> config.speakerHandoverSeconds = value));
+		list.addWidget(secondsSlider("min_shot", config.minShotSeconds, 0.0f, 5.0f,
+				value -> config.minShotSeconds = value));
+		list.addWidget(secondsSlider("max_focus", config.maxSpeakerFocusSeconds, 0.0f, 120.0f,
+				value -> config.maxSpeakerFocusSeconds = value));
+		list.addWidget(secondsSlider("speaker_break", config.speakerBreakSeconds, 1.0f, 60.0f,
+				value -> config.speakerBreakSeconds = value));
 		list.addWidget(blocksSlider("speaker_distance", config.speakerMaxDistance, 4.0f, 64.0f,
 				value -> config.speakerMaxDistance = value));
 		list.addWidget(toggle("rule_of_thirds", () -> config.ruleOfThirds, value -> config.ruleOfThirds = value));

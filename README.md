@@ -62,8 +62,9 @@ suits — the bright and stylised looks stay sharp across the whole frame even w
 
 **Six camera modes.**
 
-- *First person* — you keep control. The camera follows your mouse with a configurable lag and
-  the position is smoothed, which kills head bob and step jitter.
+- *First person* — you keep control. The camera follows your mouse with a configurable lag, the
+  position is smoothed, and the walking sway is switched off entirely: vanilla rocks the view
+  from side to side on every step, and no camera on a real set does that.
 - *Dynamic camera* — the camera detaches and shoots the whole scene: you and every player within
   the scene radius (named creatures can be counted in as well, off by default). It composes
   around the group centre at a distance wide enough to hold everyone, and picks from orbits,
@@ -72,8 +73,11 @@ suits — the bright and stylised looks stay sharp across the whole frame even w
 - *Focus on speaker* — the same scene coverage while the room is quiet, but the moment
   [Simple Voice Chat](https://modrinth.com/mod/simple-voice-chat) reports someone talking, the
   camera cuts to their face: a close-up or a push-in from 1.35–2.3 blocks, angled off their own
-  gaze so you see the face, not the back of the head. It holds them until they have been silent
-  for a couple of seconds, then returns to the wide coverage.
+  gaze so you see the face, not the back of the head. Two separate timings decide when it lets
+  go, because a conversation and a silence are different things: a quarter of a second's pause is
+  enough for somebody else to take the frame, while a room that has simply gone quiet holds the
+  last speaker a while longer. A turn also has a maximum length, so an open mic or a held talk
+  key cannot own the camera for the rest of the evening.
 - *Dialogue* — shot-reverse-shot, the way films have covered conversations for a century: hold
   the speaker, cut to the listener for their reaction, and every fourth cut or so pull back into
   a two shot holding both. Who counts as the speaker comes from Simple Voice Chat when it is
@@ -95,6 +99,19 @@ along all four corners of its near plane; a shot that stays jammed against geome
 from a different angle. In a room too small for travelling shots the camera switches to looking
 down from the ceiling, and if a wall ever squeezes it inside the people it is filming, it climbs
 out of them.
+
+Shots also respect the people. Every frame the camera checks each participant against its real
+field of view — the letterbox included, since the mattes eat the top and bottom of the picture —
+and backs off by exactly what is missing, so nobody is left outside the frame however the group
+is spread out. A few rays a second confirm the scene is actually visible and not behind a pillar;
+a shot of nothing is dropped for a better angle. Signs, item frames and other clutter with no
+collision cannot be pushed away from the lens, so anything that ends up right in front of it is
+simply not drawn.
+
+One thing the camera deliberately ignores is where people are looking. A shot's angle belongs to
+the shot: it is fixed when the shot is composed and only follows someone who genuinely turns
+around, slowly. Otherwise whoever was on screen would be steering the camera with their mouse —
+for everybody watching.
 
 ## Controls
 

@@ -68,6 +68,12 @@ public class CinemaConfig {
 	public float rotationSmoothing = 0.55f;
 	/** Smoothing applied to the camera position (kills head bob and step jitter). */
 	public float positionSmoothing = 0.45f;
+	/**
+	 * Kill the walking sway and the hurt tilt entirely. Vanilla rocks the view side to side on
+	 * every step, which no camera on a real set does; smoothing the position cannot remove it
+	 * because the sway is applied to the view matrix, not to the camera.
+	 */
+	public boolean stabilizeCamera = true;
 
 	// ---- directed camera --------------------------------------------------------------------
 	/** Average length of one shot, in seconds. */
@@ -91,10 +97,35 @@ public class CinemaConfig {
 	 * default: on a busy server a named horse or pet would otherwise pull shots off the people.
 	 */
 	public boolean includeNamedEntities = false;
+	/**
+	 * Back the camera off until every participant is inside the frame. Without it a shot is only
+	 * as wide as the group's radius suggests, and people standing off to one side fall out of
+	 * view — worse in a room, where the walls cap how far back the camera may sit.
+	 */
+	public boolean keepEveryoneInFrame = true;
+	/** Hide signs, frames and other clutter that ends up right in front of the lens. */
+	public boolean hideNearbyBlockers = true;
+	/** How close something has to be to the lens before it is hidden, in blocks. */
+	public float blockerDistance = 1.8f;
 
 	// ---- speaker focus ----------------------------------------------------------------------
-	/** Seconds of silence before the camera lets go of a speaker. */
-	public float speakerHoldSeconds = 2.5f;
+	/** Seconds of silence before the camera lets go of a speaker and returns to the group. */
+	public float speakerHoldSeconds = 1.2f;
+	/**
+	 * How briefly the current speaker has to pause before somebody else may take the frame.
+	 * This is what makes short exchanges work: hold is about silence, handover is about a reply.
+	 */
+	public float speakerHandoverSeconds = 0.25f;
+	/** Shortest a cut may last, so people talking over each other cannot make the camera stutter. */
+	public float minShotSeconds = 0.6f;
+	/**
+	 * Longest one person may hold the frame before the camera goes back to the room, in seconds.
+	 * Somebody holding push-to-talk down, or running open-mic, would otherwise own the shot for
+	 * as long as they felt like it. 0 turns the limit off.
+	 */
+	public float maxSpeakerFocusSeconds = 20.0f;
+	/** How long the camera stays off a speaker who has run out their turn, in seconds. */
+	public float speakerBreakSeconds = 7.0f;
 	/** Ignore speakers further away than this, in blocks. */
 	public float speakerMaxDistance = 24.0f;
 	/** Frame the speaker off-centre, the way a real shot would. */
@@ -277,7 +308,12 @@ public class CinemaConfig {
 		shotSpeed = clamp(shotSpeed, 0.2f, 3.0f);
 		transitionSeconds = clamp(transitionSeconds, 0.2f, 5.0f);
 		sceneRadius = clamp(sceneRadius, 3.0f, 48.0f);
-		speakerHoldSeconds = clamp(speakerHoldSeconds, 0.5f, 15.0f);
+		blockerDistance = clamp(blockerDistance, 0.5f, 5.0f);
+		speakerHoldSeconds = clamp(speakerHoldSeconds, 0.2f, 15.0f);
+		speakerHandoverSeconds = clamp(speakerHandoverSeconds, 0.0f, 3.0f);
+		minShotSeconds = clamp(minShotSeconds, 0.0f, 5.0f);
+		maxSpeakerFocusSeconds = clamp(maxSpeakerFocusSeconds, 0.0f, 120.0f);
+		speakerBreakSeconds = clamp(speakerBreakSeconds, 1.0f, 60.0f);
 		speakerMaxDistance = clamp(speakerMaxDistance, 4.0f, 64.0f);
 	}
 
