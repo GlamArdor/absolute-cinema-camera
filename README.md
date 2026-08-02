@@ -9,6 +9,11 @@ need the mod.
 
 ![A table, held whole](https://cdn.modrinth.com/data/WoK9thlP/images/70892e29075993100e66b888ed88e303283d9983.jpg)
 
+**[Watch it film a conversation](https://youtu.be/VNlPeCYkjGI)** — one continuous take, nothing cut
+afterwards. Every change of frame is the mod deciding who has the floor.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/VNlPeCYkjGI" title="Absolute Cinema Camera — the camera cuts to whoever is talking" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## What it does
 
 **Letterbox and HUD.** Cinemascope mattes at the top and bottom, sliding in over a configurable
