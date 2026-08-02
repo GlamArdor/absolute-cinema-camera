@@ -157,6 +157,19 @@ public class CinemaConfig {
 	public float speakerMaxDistance = 24.0f;
 	/** Frame the speaker off-centre, the way a real shot would. */
 	public boolean ruleOfThirds = true;
+
+	/**
+	 * Hold a frame until asked for another one, instead of changing it when its time is up.
+	 *
+	 * <p>Only applies while the camera is filming the room. The moment somebody has the floor the
+	 * camera cuts to them as usual — being told who is speaking is the whole point of those modes,
+	 * and a manual key cannot be faster than that. What this switches off is the part that happens
+	 * on a timer: the change of angle every eight seconds or so, chosen at random.
+	 *
+	 * <p>A shot jammed against a wall, or aimed at the back of a pillar, is still recomposed
+	 * without asking. Holding a frame is worth doing; holding a broken one is not.
+	 */
+	public boolean manualShotChanges;
 	/**
 	 * Let the dynamic camera follow whoever is speaking or writing, the same way the speaker focus
 	 * mode does. Turn it off to keep the dynamic camera on the scene as a whole, and the approach

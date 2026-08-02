@@ -148,6 +148,13 @@ have left the scene, whatever the scene radius says — so the camera leaves wit
 staying behind to film a conversation you are no longer part of. The distance is configurable, and
 can be switched off.
 
+**Cutting by hand.** The angle can be changed on a key at any time, and the automatic change can
+be switched off altogether — then a frame stands until you ask for another one. Only while the
+camera is filming the room: whoever starts speaking still takes the frame at once, since being
+told who has the floor is the point of those modes and no key is quicker than a voice. A shot
+jammed against a wall is still recomposed without asking, because holding a frame is worth doing
+and holding a broken one is not.
+
 One thing the camera deliberately ignores is where people are looking. A shot's angle belongs to
 the shot: it is fixed when the shot is composed and only follows someone who genuinely turns
 around, slowly. Otherwise whoever was on screen would be steering the camera with their mouse —
@@ -163,6 +170,7 @@ for everybody watching.
 | unbound | Next colour grade |
 | unbound | Next scene profile |
 | unbound | Plant the tripod here |
+| `F9` | Change the angle |
 
 All of them are rebindable in the vanilla controls screen, under *Absolute Cinema Camera*.
 
@@ -198,6 +206,7 @@ fight your personal settings.
 /cinema grade <grade>         any preset id, with tab completion
 /cinema scene ...             see scene profiles above
 /cinema tripod                plant the tripod where you are standing
+/cinema shot                  change the angle, the same as the key
 ```
 
 ## Building

@@ -187,6 +187,9 @@ public final class CameraDirector {
 	private boolean leashed;
 	private boolean leashCutPending;
 
+	/** Somebody has asked for a different angle, by key or by command. */
+	private boolean manualCutPending;
+
 	private CameraDirector() {
 	}
 
@@ -217,6 +220,17 @@ public final class CameraDirector {
 		dialogueShotElapsed = 0.0f;
 		leashed = false;
 		leashCutPending = false;
+		manualCutPending = false;
+	}
+
+	/**
+	 * Compose a different frame, now — the manual version of what the timer usually does.
+	 *
+	 * <p>Answered on the next frame rather than here, so it lands in the same place every other
+	 * reason for a cut does and cannot half-change a shot that is being evaluated.
+	 */
+	public void requestNewShot() {
+		manualCutPending = true;
 	}
 
 	public Vec3d getPos() {
@@ -284,6 +298,8 @@ public final class CameraDirector {
 		// and then fire a stray cut minutes later.
 		boolean leashCut = leashCutPending;
 		leashCutPending = false;
+		boolean asked = manualCutPending;
+		manualCutPending = false;
 
 		switch (config.mode) {
 			case TRIPOD -> {
@@ -291,11 +307,23 @@ public final class CameraDirector {
 				return true;
 			}
 			case SIDE_TRACK -> {
+				if (asked) {
+					// The only choice this mode makes is which side it runs along, so that is what
+					// asking for another angle means here.
+					trackSide = -trackSide;
+					lastSideSwap = clock;
+				}
 				applyPose(client, config, dt, sideTrackPose(scene, config, dt));
 				return true;
 			}
 			case DIALOGUE -> {
-				Pose pose = dialoguePose(client, scene, speaker, speakerChanged || leashCut, config, dt);
+				if (asked) {
+					// A fresh side of the group, and a fresh angle taken from where they stand now.
+					dialogueSideChosen = false;
+					hasDialogueFacing = false;
+				}
+				Pose pose = dialoguePose(client, scene, speaker,
+						speakerChanged || leashCut || asked, config, dt);
 				if (pose != null) {
 					applyPose(client, config, dt, pose);
 					probeVisibility(client, scene);
@@ -323,13 +351,19 @@ public final class CameraDirector {
 			blindFor = 0.0f;
 		}
 
-		if (shot == null || shotElapsed >= shot.duration || speakerChanged || stuck) {
+		// Held frames: while nobody has the floor, the shot stands until it is asked to change.
+		// A speaker still takes the frame the moment they speak — that is what the mode is for, and
+		// no key can be quicker than the voice itself.
+		boolean onTimer = !(config.manualShotChanges && speaker == null);
+		boolean timeUp = shot != null && onTimer && shotElapsed >= shot.duration;
+
+		if (shot == null || timeUp || speakerChanged || stuck || asked) {
 			if (DEBUG && speakerChanged) {
 				AbsoluteCinema.LOGGER.info("[camera] cutting to {}",
 						speaker == null ? "the group (nobody speaking)" : speaker.getName().getString());
 			}
 			framingSpeaker = speaker != null;
-			startNewShot(client, scene, config, speakerChanged);
+			startNewShot(client, scene, config, speakerChanged || asked);
 		}
 
 		Pose target = evaluate(shot, shotElapsed / shot.duration, scene, config);

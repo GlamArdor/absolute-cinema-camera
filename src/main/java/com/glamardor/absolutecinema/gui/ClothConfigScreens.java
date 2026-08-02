@@ -162,6 +162,8 @@ final class ClothConfigScreens {
 		LIVE.add(() -> config.cameraHeight = heightEntry.getValue() / 100.0f);
 		directed.addEntry(toggle(entries, "include_named", config.includeNamedEntities,
 				defaults.includeNamedEntities, value -> config.includeNamedEntities = value));
+		directed.addEntry(toggle(entries, "manual_shots", config.manualShotChanges,
+				defaults.manualShotChanges, value -> config.manualShotChanges = value));
 		directed.addEntry(toggle(entries, "keep_everyone", config.keepEveryoneInFrame,
 				defaults.keepEveryoneInFrame, value -> config.keepEveryoneInFrame = value));
 		directed.addEntry(toggle(entries, "hide_blockers", config.hideNearbyBlockers,

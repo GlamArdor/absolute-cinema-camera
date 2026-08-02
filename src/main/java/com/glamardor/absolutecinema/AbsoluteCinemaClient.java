@@ -31,6 +31,7 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 	public static KeyBinding gradeKey;
 	public static KeyBinding profileKey;
 	public static KeyBinding tripodKey;
+	public static KeyBinding shotKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -44,6 +45,9 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 		gradeKey = register("grade", GLFW.GLFW_KEY_F8);
 		profileKey = register("profile", GLFW.GLFW_KEY_UNKNOWN);
 		tripodKey = register("tripod", GLFW.GLFW_KEY_UNKNOWN);
+		// Next to the other two, and the one an operator reaches for most once the shots are held
+		// rather than timed.
+		shotKey = register("shot", GLFW.GLFW_KEY_F9);
 
 		ClientTickEvents.END_CLIENT_TICK.register(AbsoluteCinemaClient::onTick);
 		CinemaCommands.register();
@@ -107,6 +111,9 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 				CameraDirector.get().placeTripod(client.player.getEyePos());
 				CinemaManager.notifyTripodPlaced();
 			}
+		}
+		while (shotKey.wasPressed()) {
+			CameraDirector.get().requestNewShot();
 		}
 		while (settingsKey.wasPressed()) {
 			client.setScreen(ConfigScreenFactory.create(null));

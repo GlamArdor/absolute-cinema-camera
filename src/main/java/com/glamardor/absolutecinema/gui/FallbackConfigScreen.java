@@ -131,6 +131,8 @@ public class FallbackConfigScreen extends Screen {
 				value -> config.cameraHeight = value));
 		list.addWidget(toggle("include_named", () -> config.includeNamedEntities,
 				value -> config.includeNamedEntities = value));
+		list.addWidget(toggle("manual_shots", () -> config.manualShotChanges,
+				value -> config.manualShotChanges = value));
 		list.addWidget(toggle("keep_everyone", () -> config.keepEveryoneInFrame,
 				value -> config.keepEveryoneInFrame = value));
 		list.addWidget(toggle("hide_blockers", () -> config.hideNearbyBlockers,

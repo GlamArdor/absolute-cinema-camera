@@ -64,7 +64,9 @@ public final class CinemaCommands {
 												.suggests(CinemaCommands::suggestProfiles)
 												.executes(CinemaCommands::applyProfile))))
 						.then(ClientCommandManager.literal("tripod")
-								.executes(CinemaCommands::placeTripod))));
+								.executes(CinemaCommands::placeTripod))
+						.then(ClientCommandManager.literal("shot")
+								.executes(CinemaCommands::nextShot))));
 	}
 
 	// ---- scene profiles ---------------------------------------------------------------------
@@ -117,6 +119,12 @@ public final class CinemaCommands {
 			return 0;
 		}
 		context.getSource().sendFeedback(Text.translatable("absolutecinema.msg.profile_deleted", name));
+		return 1;
+	}
+
+	/** Asks the director for a different angle, the same as the key does. */
+	private static int nextShot(CommandContext<FabricClientCommandSource> context) {
+		CameraDirector.get().requestNewShot();
 		return 1;
 	}
 
