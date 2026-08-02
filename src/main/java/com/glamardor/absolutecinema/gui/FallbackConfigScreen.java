@@ -4,6 +4,7 @@ import com.glamardor.absolutecinema.camera.CameraDirector;
 import com.glamardor.absolutecinema.config.CameraMode;
 import com.glamardor.absolutecinema.config.CinemaConfig;
 import com.glamardor.absolutecinema.config.ColorGrade;
+import com.glamardor.absolutecinema.render.SceneDome;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
@@ -14,6 +15,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.gui.widget.ElementListWidget;
 import net.minecraft.client.gui.widget.SliderWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
@@ -39,6 +41,21 @@ public class FallbackConfigScreen extends Screen {
 	public FallbackConfigScreen(@Nullable Screen parent) {
 		super(Text.translatable("absolutecinema.config.title"));
 		this.parent = parent;
+	}
+
+	/**
+	 * Leaves the world visible behind this screen while the scene radius is being shown.
+	 *
+	 * <p>A screen opened in game does not blur what is behind it — it lays a dark gradient over the
+	 * whole window, which is a different method from the blurring a screen does over the menus, and
+	 * it was covering the very thing the radius slider is for.
+	 */
+	@Override
+	public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+		if (SceneDome.isShowing()) {
+			return;
+		}
+		super.renderBackground(context, mouseX, mouseY, delta);
 	}
 
 	@Override
@@ -106,6 +123,12 @@ public class FallbackConfigScreen extends Screen {
 		list.addWidget(toggle("avoid_walls", () -> config.avoidWalls, value -> config.avoidWalls = value));
 		list.addWidget(blocksSlider("scene_radius", config.sceneRadius, 3.0f, 48.0f,
 				value -> config.sceneRadius = value));
+		list.addWidget(blocksSlider("scene_height", config.sceneHeightLimit, 0.0f, 32.0f,
+				value -> config.sceneHeightLimit = value));
+		list.addWidget(blocksSlider("leave_scene", config.leaveSceneDistance, 0.0f, 48.0f,
+				value -> config.leaveSceneDistance = value));
+		list.addWidget(blocksSlider("camera_height", config.cameraHeight, -2.0f, 2.0f,
+				value -> config.cameraHeight = value));
 		list.addWidget(toggle("include_named", () -> config.includeNamedEntities,
 				value -> config.includeNamedEntities = value));
 		list.addWidget(toggle("keep_everyone", () -> config.keepEveryoneInFrame,
@@ -116,6 +139,20 @@ public class FallbackConfigScreen extends Screen {
 				value -> config.blockerDistance = value));
 
 		list.addHeader(Text.translatable("absolutecinema.category.speaker"));
+		list.addWidget(toggle("react_to_chat", () -> config.reactToChat,
+				value -> config.reactToChat = value));
+		list.addWidget(toggle("react_to_own_chat", () -> config.reactToOwnChat,
+				value -> config.reactToOwnChat = value));
+		list.addWidget(toggle("dynamic_follows", () -> config.dynamicFollowsSpeaker,
+				value -> config.dynamicFollowsSpeaker = value));
+		list.addWidget(secondsSlider("chat_hold", config.chatHoldSeconds, 0.0f, 20.0f,
+				value -> config.chatHoldSeconds = value));
+		list.addWidget(secondsSlider("chat_per_100", config.chatSecondsPer100, 0.0f, 30.0f,
+				value -> config.chatSecondsPer100 = value));
+		list.addWidget(secondsSlider("chat_max", config.chatMaxSeconds, 0.5f, 60.0f,
+				value -> config.chatMaxSeconds = value));
+		list.addWidget(textField("chat_ignore", String.join(", ", config.chatIgnore),
+				value -> config.chatIgnore = splitMarkers(value)));
 		list.addWidget(secondsSlider("speaker_hold", config.speakerHoldSeconds, 0.2f, 15.0f,
 				value -> config.speakerHoldSeconds = value));
 		list.addWidget(secondsSlider("speaker_handover", config.speakerHandoverSeconds, 0.0f, 3.0f,
@@ -163,10 +200,38 @@ public class FallbackConfigScreen extends Screen {
 		MinecraftClient.getInstance().setScreen(parent);
 	}
 
+	/** Commas separate the markers; a marker may still contain spaces, so only the commas count. */
+	private static List<String> splitMarkers(String value) {
+		List<String> markers = new java.util.ArrayList<>();
+		for (String piece : value.split(",")) {
+			String marker = piece.trim();
+			if (!marker.isEmpty()) {
+				markers.add(marker);
+			}
+		}
+		return markers;
+	}
+
 	private ClickableWidget toggle(String key, Supplier<Boolean> getter, Consumer<Boolean> setter) {
 		return cycleButton(key,
 				() -> getter.get() ? ScreenTexts.ON : ScreenTexts.OFF,
 				() -> setter.accept(!getter.get()));
+	}
+
+	/**
+	 * A plain text box, for the one setting that is a list of words rather than a number.
+	 *
+	 * <p>Written back on every keystroke, like everything else on this screen: there is no save
+	 * button here, and a field that only committed on enter would silently lose what was typed.
+	 */
+	private ClickableWidget textField(String key, String current, Consumer<String> setter) {
+		TextFieldWidget field = new TextFieldWidget(this.textRenderer, 0, 0, ROW_WIDTH, 20,
+				Text.translatable("absolutecinema.option." + key));
+		field.setMaxLength(256);
+		field.setText(current);
+		field.setChangedListener(setter);
+		field.setTooltip(Tooltip.of(Text.translatable("absolutecinema.option." + key + ".tooltip")));
+		return field;
 	}
 
 	private ClickableWidget cycleButton(String key, Supplier<Text> value, Runnable onClick) {

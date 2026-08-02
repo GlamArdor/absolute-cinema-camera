@@ -1,5 +1,6 @@
 package com.glamardor.absolutecinema.mixin;
 
+import com.glamardor.absolutecinema.CinemaManager;
 import com.glamardor.absolutecinema.render.CinemaOverlay;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
@@ -36,5 +37,23 @@ public abstract class InGameHudMixin {
 			context.getMatrices().popMatrix();
 		}
 		ci.cancel();
+	}
+
+	/**
+	 * No crosshair in a film. It survives when the HUD is deliberately kept — for the chat, or the
+	 * hotbar — and there it is worse than pointless: in the directed modes the camera is nowhere
+	 * near the player's eyes, so the mark sits in the middle of the picture pointing at nothing.
+	 *
+	 * <p>Cancelled at the drawing, not at {@code shouldRenderCrosshair}. That method reads as the
+	 * obvious place and is not: it asks whether the <em>debug</em> crosshair — the little F3 axis
+	 * cross — should replace the ordinary one, and the ordinary one is drawn when it returns false.
+	 * Forcing it false therefore guarantees the crosshair rather than removing it.
+	 */
+	@Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
+	private void absolutecinema$hideCrosshair(DrawContext context, RenderTickCounter tickCounter,
+			CallbackInfo ci) {
+		if (CinemaManager.isVisible()) {
+			ci.cancel();
+		}
 	}
 }

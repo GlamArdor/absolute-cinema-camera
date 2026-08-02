@@ -19,8 +19,16 @@ import net.minecraft.util.math.Vec3d;
  * aside — in first person, things disappearing in front of you would just be confusing.
  */
 public final class LensClearing {
-	/** Ignore whatever is off to the side or behind: only what the lens is pointed at matters. */
-	private static final double IN_FRONT = 0.15;
+	/**
+	 * How far off the lens axis something may sit and still count as being in the way.
+	 *
+	 * <p>Two thresholds, because the angle a thing covers depends on how close it is. At the far
+	 * edge of the clearing distance only what the camera is more or less pointed at matters; right
+	 * up against the lens, a sign a long way off axis still fills a corner of the frame. A single
+	 * threshold is what let signs survive at the edge of shot.
+	 */
+	private static final double IN_FRONT_FAR = 0.15;
+	private static final double IN_FRONT_NEAR = -0.35;
 
 	private LensClearing() {
 	}
@@ -52,6 +60,10 @@ public final class LensClearing {
 			return true;
 		}
 		Vec3d forward = Vec3d.fromPolar(camera.getPitch(), camera.getYaw());
-		return delta.normalize().dotProduct(forward) > IN_FRONT;
+		// Widens as it gets closer: at the edge of the radius the lens has to be pointed at it, on
+		// the lens itself anything short of directly behind counts.
+		double nearness = 1.0 - Math.sqrt(distanceSquared) / radius;
+		double threshold = IN_FRONT_FAR + (IN_FRONT_NEAR - IN_FRONT_FAR) * nearness;
+		return delta.normalize().dotProduct(forward) > threshold;
 	}
 }

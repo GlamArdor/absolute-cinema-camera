@@ -1,9 +1,13 @@
 package com.glamardor.absolutecinema;
 
 import com.glamardor.absolutecinema.camera.CameraDirector;
+import com.glamardor.absolutecinema.chat.ChatProbe;
+import com.glamardor.absolutecinema.chat.ChatWatcher;
 import com.glamardor.absolutecinema.config.CinemaConfig;
 import com.glamardor.absolutecinema.gui.ConfigScreenFactory;
+import com.glamardor.absolutecinema.gui.LivePreview;
 import com.glamardor.absolutecinema.render.CinemaPostProcessor;
+import com.glamardor.absolutecinema.render.SceneDome;
 import com.glamardor.absolutecinema.voice.SpeakerTracker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -36,12 +40,17 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 		toggleKey = register("toggle", GLFW.GLFW_KEY_F7);
 		settingsKey = register("settings", GLFW.GLFW_KEY_UNKNOWN);
 		modeKey = register("mode", GLFW.GLFW_KEY_UNKNOWN);
-		gradeKey = register("grade", GLFW.GLFW_KEY_UNKNOWN);
+		// F7 in, F8 through the looks: the two things that get pressed during a scene, next to each
+		// other, and neither taken by vanilla.
+		gradeKey = register("grade", GLFW.GLFW_KEY_F8);
 		profileKey = register("profile", GLFW.GLFW_KEY_UNKNOWN);
 		tripodKey = register("tripod", GLFW.GLFW_KEY_UNKNOWN);
 
 		ClientTickEvents.END_CLIENT_TICK.register(AbsoluteCinemaClient::onTick);
 		CinemaCommands.register();
+		ChatProbe.register();
+		ChatWatcher.register();
+		SceneDome.register();
 
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			// abort rather than a polite switch-off: the fade is driven by rendered frames, and
@@ -81,6 +90,7 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 	private static float lastHealth = -1.0f;
 
 	private static void onTick(MinecraftClient client) {
+		LivePreview.tick(client);
 		checkDamageInterrupt(client);
 		while (toggleKey.wasPressed()) {
 			CinemaManager.toggle();

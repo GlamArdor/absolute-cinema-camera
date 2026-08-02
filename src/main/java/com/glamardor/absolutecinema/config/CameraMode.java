@@ -47,9 +47,13 @@ public enum CameraMode {
 		return this != FIRST_PERSON;
 	}
 
-	/** True when this mode reacts to Simple Voice Chat telling us who is talking. */
-	public boolean usesVoiceChat() {
-		return this == SPEAKER_FOCUS || this == DIALOGUE;
+	/**
+	 * True when this mode wants to know who is holding the floor — by voice on Simple Voice Chat,
+	 * or by writing in chat. The dynamic camera is included but asks the config first: following a
+	 * speaker is what separates it from the mode named after doing so.
+	 */
+	public boolean usesSpeaker() {
+		return this == SPEAKER_FOCUS || this == DIALOGUE || this == DYNAMIC;
 	}
 
 	public CameraMode next() {

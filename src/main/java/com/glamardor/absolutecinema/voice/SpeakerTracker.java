@@ -17,6 +17,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class SpeakerTracker {
 	private static final Map<UUID, Long> LAST_HEARD = new ConcurrentHashMap<>();
 
+	/**
+	 * Attention won by writing rather than by talking: who, when they wrote, and how long the
+	 * frame is theirs for.
+	 *
+	 * <p>Kept apart from the voices on purpose. Speech is a duration — it keeps arriving, and the
+	 * timestamp keeps moving, which is what the hold and handover windows are measuring. A message
+	 * is an instant with a reading time attached, and it can never be allowed to outrank somebody
+	 * who is actually talking: were both in one table, the newest message would always look like
+	 * the freshest sound.
+	 */
+	private static final Map<UUID, Written> WRITTEN = new ConcurrentHashMap<>();
+
+	private record Written(long at, long until) {
+	}
+
 	/** Sticky current speaker, so two people talking at once do not make the camera flip-flop. */
 	@Nullable
 	private static volatile UUID held;
@@ -44,8 +59,15 @@ public final class SpeakerTracker {
 		LAST_HEARD.put(speaker, System.currentTimeMillis());
 	}
 
+	/** Called when somebody's chat message or roleplay emote arrives, with its reading time. */
+	public static void markWritten(UUID author, float seconds) {
+		long now = System.currentTimeMillis();
+		WRITTEN.put(author, new Written(now, now + (long) (seconds * 1000.0f)));
+	}
+
 	public static void clear() {
 		LAST_HEARD.clear();
+		WRITTEN.clear();
 		held = null;
 		resting = null;
 		restingUntil = 0L;
@@ -112,7 +134,9 @@ public final class SpeakerTracker {
 
 		if (chosen == null) {
 			held = null;
-			return null;
+			// Nobody is talking. Whoever wrote most recently — and is still inside their reading
+			// time — has the frame instead.
+			return pickWritten(now);
 		}
 		if (!chosen.equals(held)) {
 			held = chosen;
@@ -129,9 +153,28 @@ public final class SpeakerTracker {
 			resting = chosen;
 			restingUntil = now + (long) (breakSeconds * 1000.0f);
 			held = null;
-			return null;
+			return pickWritten(now);
 		}
 		return chosen;
+	}
+
+	/** The most recent message still inside its reading time; expired entries are dropped. */
+	@Nullable
+	private static UUID pickWritten(long now) {
+		UUID best = null;
+		long bestTime = 0L;
+		for (Map.Entry<UUID, Written> entry : WRITTEN.entrySet()) {
+			Written written = entry.getValue();
+			if (now >= written.until()) {
+				WRITTEN.remove(entry.getKey(), written);
+				continue;
+			}
+			if (written.at() > bestTime) {
+				bestTime = written.at();
+				best = entry.getKey();
+			}
+		}
+		return best;
 	}
 
 	/** The most recent voice inside the active window, skipping one uuid if asked. */

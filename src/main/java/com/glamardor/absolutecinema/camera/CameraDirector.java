@@ -56,12 +56,38 @@ public final class CameraDirector {
 	/** Closer than this to the subject and the camera is inside them — abandon the shot fast. */
 	private static final double PERSONAL_SPACE = 1.15;
 
+	/** How close the lens may come to anybody, horizontally, before it is pushed back out. */
+	private static final double PERSON_RADIUS = 0.55;
+
+	/** The camera never goes below this much above the ground under it. */
+	private static final double FLOOR_CLEARANCE = 0.35;
+
 	/** How far around the front of the scene shots may swing, in degrees either way. */
 	private static final double FRONT_ARC = 125.0;
 
 	/** Side track: how far round from the scene's facing the camera runs, and how often it swaps. */
 	private static final double SIDE_ANGLE = 82.0;
 	private static final float SIDE_SWAP_SECONDS = 22.0f;
+
+	/**
+	 * Dialogue: how far off the group's facing the master sits, and how far off a speaker's own
+	 * gaze the camera goes when it cuts in. Straight down the line of sight is a passport photo;
+	 * a little to one side is a face.
+	 */
+	private static final double MASTER_AZIMUTH = 26.0;
+	private static final double SPEAKER_AZIMUTH = 34.0;
+
+	/** How far a cut-in drifts in, and over how long. Subtle on purpose — it should not be noticed. */
+	private static final float PUSH_SECONDS = 5.0f;
+	private static final double PUSH_RATIO = 0.76;
+
+	/** Below this swing a cut reads as a twitch rather than a new shot, so the camera pans instead. */
+	private static final double REFRAME_ANGLE = 25.0;
+
+	/** Or below this much travel, which is what really decides it when the camera is close in. */
+	private static final double REFRAME_DISTANCE = 2.2;
+
+	private static final float REFRAME_SECONDS = 0.32f;
 
 	/** Past this much movement in one frame we assume a teleport and stop interpolating. */
 	private static final double TELEPORT_DISTANCE = 16.0;
@@ -146,22 +172,20 @@ public final class CameraDirector {
 	private double trackedFacing;
 	private boolean hasTrackedFacing;
 
-	/** Dialogue mode state. */
-	private DialoguePhase dialoguePhase = DialoguePhase.TWO_SHOT;
-	private float dialoguePhaseLeft;
-	private int dialogueCuts;
+	/** Dialogue mode: which side of the group we sit on, and what the current frame is doing. */
 	private double dialogueSide = 1.0;
 	private double dialogueDistance = 1.9;
+	private double dialogueFacing;
+	private boolean hasDialogueFacing;
+	private boolean dialogueSideChosen;
+	private boolean dialogueOnSpeaker;
+	private float dialogueShotElapsed;
 	@Nullable
-	private Entity dialogueFirst;
-	@Nullable
-	private Entity dialogueSecond;
+	private Entity dialogueSubject;
 
-	private enum DialoguePhase {
-		ON_SPEAKER,
-		ON_LISTENER,
-		TWO_SHOT
-	}
+	/** True while the player has walked away from everybody else, and a cut is owed for it. */
+	private boolean leashed;
+	private boolean leashCutPending;
 
 	private CameraDirector() {
 	}
@@ -186,10 +210,13 @@ public final class CameraDirector {
 		tripodPos = null;
 		lastSideSwap = -100.0f;
 		hasTrackedFacing = false;
-		dialogueFirst = null;
-		dialogueSecond = null;
-		dialoguePhaseLeft = 0.0f;
-		dialogueCuts = 0;
+		dialogueSubject = null;
+		dialogueOnSpeaker = false;
+		hasDialogueFacing = false;
+		dialogueSideChosen = false;
+		dialogueShotElapsed = 0.0f;
+		leashed = false;
+		leashCutPending = false;
 	}
 
 	public Vec3d getPos() {
@@ -226,7 +253,9 @@ public final class CameraDirector {
 
 		CinemaConfig config = CinemaConfig.get();
 
-		UUID speakerId = config.mode.usesVoiceChat()
+		boolean wantsSpeaker = config.mode.usesSpeaker()
+				&& (config.mode != CameraMode.DYNAMIC || config.dynamicFollowsSpeaker);
+		UUID speakerId = wantsSpeaker
 				? SpeakerTracker.getCurrentSpeaker(config.speakerHoldSeconds, config.speakerHandoverSeconds,
 						config.maxSpeakerFocusSeconds, config.speakerBreakSeconds)
 				: null;
@@ -251,6 +280,10 @@ public final class CameraDirector {
 
 		Scene scene = collectScene(client, config, speaker, tickProgress);
 		clock += dt;
+		// Consumed here rather than further down, so it cannot survive a mode that never reads it
+		// and then fire a stray cut minutes later.
+		boolean leashCut = leashCutPending;
+		leashCutPending = false;
 
 		switch (config.mode) {
 			case TRIPOD -> {
@@ -262,12 +295,13 @@ public final class CameraDirector {
 				return true;
 			}
 			case DIALOGUE -> {
-				Pose pose = dialoguePose(client, scene, speaker, speakerChanged, config, dt);
+				Pose pose = dialoguePose(client, scene, speaker, speakerChanged || leashCut, config, dt);
 				if (pose != null) {
 					applyPose(client, config, dt, pose);
+					probeVisibility(client, scene);
 					return true;
 				}
-				// Nobody to talk to — fall through to the ordinary coverage.
+				// Nobody to film — fall through to the ordinary coverage.
 			}
 			default -> {
 			}
@@ -279,7 +313,7 @@ public final class CameraDirector {
 		// A shot that has spent a second and a half jammed against a wall — or one that has been
 		// looking at the back of a pillar while the scene happens behind it — is not going to get
 		// better. Pick a different angle instead of sitting there.
-		boolean stuck = crampedFor > 1.5f || blindFor > 1.0f;
+		boolean stuck = crampedFor > 1.5f || blindFor > 1.0f || leashCut;
 		if (stuck) {
 			if (DEBUG) {
 				AbsoluteCinema.LOGGER.info("[camera] recomposing: {}",
@@ -345,12 +379,28 @@ public final class CameraDirector {
 
 	/** Wall clamping, blending and the follow damping — shared by every mode. */
 	private void applyPose(MinecraftClient client, CinemaConfig config, float dt, Pose target) {
+		if (config.cameraHeight != 0.0f) {
+			// The camera moves; what it is aimed at does not. That is what a tripod leg does, and
+			// it is the only version that stays usable at the ends of the range: raised, the camera
+			// tilts down and still holds everybody; lowered, it looks up at them. Moving the aim
+			// along with it merely slides the whole frame off the people.
+			target = new Pose(target.pos.add(0.0, config.cameraHeight, 0.0), target.look);
+			// clampOrigin deliberately not moved: it is where the wall test is cast *from*, and
+			// dropping it two blocks puts the origin inside the floor, which is how the camera
+			// ended up under the world.
+		}
+
 		if (config.avoidWalls && client.world != null && client.player != null) {
 			// Cast from the subject itself, not from the rule-of-thirds-shifted look point — in a
 			// tight room that shifted point can sit inside the wall and break the whole test.
 			Vec3d origin = clampOrigin != null ? clampOrigin : target.look;
 			target = new Pose(clampAgainstWalls(client.world, client.player, origin, target.pos), target.look);
 		}
+
+		// After the walls, not before: a camera pressed slightly into stone is a blemish, a camera
+		// inside somebody's head is the shot ruined.
+		target = new Pose(pushOutOfPeople(client, target.pos, target.look), target.look);
+		target = new Pose(liftOffTheGround(client, target.pos), target.look);
 
 		if (!hasPose) {
 			pos = target.pos;
@@ -374,6 +424,73 @@ public final class CameraDirector {
 			pos = pos.lerp(target.pos, follow);
 			look = look.lerp(target.look, follow);
 		}
+	}
+
+	/**
+	 * Keeps the camera above the floor it is standing over.
+	 *
+	 * <p>The wall test casts from the subject to the camera and stops at whatever it hits, which
+	 * catches a camera driven into a wall but not one that has sunk through the floorboards on its
+	 * way to a low angle: the ray runs along the floor rather than through it. So the last word on
+	 * height is a short probe straight down.
+	 */
+	private Vec3d liftOffTheGround(MinecraftClient client, Vec3d anchor) {
+		if (client.world == null || client.player == null) {
+			return anchor;
+		}
+		Vec3d below = anchor.subtract(0.0, 2.5, 0.0);
+		HitResult hit = client.world.raycast(new RaycastContext(anchor, below,
+				RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player));
+		if (hit.getType() != HitResult.Type.BLOCK) {
+			return anchor;
+		}
+		double floor = hit.getPos().y + FLOOR_CLEARANCE;
+		return anchor.y >= floor ? anchor : new Vec3d(anchor.x, floor, anchor.z);
+	}
+
+	/**
+	 * Keeps the lens out of the people it is filming.
+	 *
+	 * <p>The wall clamp only knows about blocks, and a shot composed a metre and a half from one
+	 * face regularly lands inside the head of somebody standing between. From inside a head you see
+	 * the inside of a skin and nothing else, so the frame is simply gone. Anyone the camera is
+	 * within arm's length of pushes it back out horizontally — the shortest way out, which keeps
+	 * the height and therefore the composition.
+	 */
+	private Vec3d pushOutOfPeople(MinecraftClient client, Vec3d anchor, Vec3d look) {
+		if (client.world == null) {
+			return anchor;
+		}
+		for (AbstractClientPlayerEntity person : client.world.getPlayers()) {
+			if (person.isSpectator()) {
+				continue;
+			}
+			Vec3d feet = person.getPos();
+			double above = anchor.y - feet.y;
+			// Only the body: over their head and under their feet the camera is free.
+			if (above < -0.4 || above > eyeOffset(person) + 0.5) {
+				continue;
+			}
+			double dx = anchor.x - feet.x;
+			double dz = anchor.z - feet.z;
+			double flat = Math.sqrt(dx * dx + dz * dz);
+			if (flat >= PERSON_RADIUS) {
+				continue;
+			}
+			if (flat < 1.0E-4) {
+				// Dead centre: no direction to be pushed in, so back off the way the shot faces.
+				Vec3d back = flatten(anchor.subtract(look));
+				if (back.lengthSquared() < 1.0E-6) {
+					back = new Vec3d(1.0, 0.0, 0.0);
+				}
+				back = back.normalize().multiply(PERSON_RADIUS);
+				anchor = new Vec3d(feet.x + back.x, anchor.y, feet.z + back.z);
+				continue;
+			}
+			double scale = PERSON_RADIUS / flat;
+			anchor = new Vec3d(feet.x + dx * scale, anchor.y, feet.z + dz * scale);
+		}
+		return anchor;
 	}
 
 	// ---------------------------------------------------------------------------------------
@@ -448,183 +565,168 @@ public final class CameraDirector {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	// Dialogue — shot, reverse shot
+	// Dialogue — a master shot, and a cut to whoever is speaking
 	// ---------------------------------------------------------------------------------------
 
 	/**
-	 * Covers a conversation the way a film does. Two participants, one side of the line, and
-	 * three framings: the speaker, the listener's reaction, and a two shot holding both.
+	 * Covers a conversation the way a camera operator with one camera would: hold the whole group
+	 * in a master shot, and cut in to whoever starts speaking. When they stop, cut back out.
 	 *
-	 * <p>The camera never crosses the line between the two of them. Cross it and the pair swap
-	 * sides of the screen between cuts, which makes the conversation unreadable. Cuts here are
-	 * instant on purpose — gliding between opposite angles would fly straight through the people.
+	 * <p>This replaced a strict two-person shot-reverse-shot. Two things were wrong with it on a
+	 * roleplay server. A conversation there is rarely two people — a table of five is normal, and
+	 * everyone not in the pair simply vanished from the film. And the reaction cut-aways, which
+	 * are what makes the technique work on a film set with a script, here landed on whoever
+	 * happened to be nearby, at moments that had nothing to do with the scene.
 	 *
-	 * <p>Returns null when there is nobody to talk to, so the caller can fall back.
+	 * <p>The camera keeps to one side of the group and does not cross it, so nobody swaps sides of
+	 * the screen between cuts. Cuts are instant on purpose: gliding between opposite angles would
+	 * fly straight through the people.
 	 */
 	@Nullable
 	private Pose dialoguePose(MinecraftClient client, Scene scene, @Nullable Entity speaker,
 			boolean speakerChanged, CinemaConfig config, float dt) {
-		Entity first = speaker != null ? speaker : client.player;
-		Entity second = keepPartner(client, first, config);
-		if (first == null || second == null) {
+		if (client.player == null) {
 			return null;
 		}
+		boolean onSpeaker = speaker != null && speaker.isAlive();
 
-		// A new voice takes over the frame at once.
-		if (speakerChanged || dialoguePhaseLeft <= 0.0f || dialogueFirst != first
-				|| dialogueSecond != second || !dialogueFirst.isAlive() || !dialogueSecond.isAlive()) {
-			advanceDialoguePhase(first, second, speakerChanged);
-		}
-		dialoguePhaseLeft -= dt;
-
-		Entity subject = dialoguePhase == DialoguePhase.ON_LISTENER ? dialogueSecond : dialogueFirst;
-		Vec3d firstEye = dialogueFirst.getLerpedPos(scene.tickProgress)
-				.add(0.0, eyeOffset(dialogueFirst), 0.0);
-		Vec3d secondEye = dialogueSecond.getLerpedPos(scene.tickProgress)
-				.add(0.0, eyeOffset(dialogueSecond), 0.0);
-
-		Vec3d axis = secondEye.subtract(firstEye);
-		axis = new Vec3d(axis.x, 0.0, axis.z);
-		if (axis.lengthSquared() < 1.0E-4) {
-			return null;
-		}
-		double separation = axis.length();
-		axis = axis.multiply(1.0 / separation);
-		Vec3d perpendicular = new Vec3d(-axis.z, 0.0, axis.x).multiply(dialogueSide);
-
-		if (dialoguePhase == DialoguePhase.TWO_SHOT) {
-			Vec3d middle = firstEye.add(secondEye).multiply(0.5);
-			double back = separation * 0.85 + 2.3;
-			Vec3d anchor = middle.add(perpendicular.multiply(back)).add(0.0, 0.45, 0.0);
-			clampOrigin = middle;
-			return new Pose(withDrift(anchor, back, config), middle);
+		if (!dialogueSideChosen) {
+			// One side of the group, chosen once and kept. Re-rolling it per cut is exactly what
+			// crossing the line looks like: everybody swaps sides of the screen between shots.
+			dialogueSide = random.nextBoolean() ? 1.0 : -1.0;
+			dialogueSideChosen = true;
 		}
 
-		// Over the far shoulder, angled off the line so we see the face and not a profile.
-		Vec3d subjectEye = subject == dialogueFirst ? firstEye : secondEye;
-		Vec3d awayFromSubject = subject == dialogueFirst ? axis : axis.multiply(-1.0);
-		double distance = dialogueDistance;
-		Vec3d anchor = subjectEye
-				.add(awayFromSubject.multiply(distance))
-				.add(perpendicular.multiply(distance * 0.42))
-				.add(0.0, 0.08, 0.0);
+		// Only a change of subject is worth a cut. People wandering in and out of a crowded room
+		// change the head count constantly, and the master simply widens to take them in.
+		boolean cutting = speakerChanged || onSpeaker != dialogueOnSpeaker
+				|| (onSpeaker && speaker != dialogueSubject);
+		if (cutting) {
+			dialogueOnSpeaker = onSpeaker;
+			dialogueSubject = speaker;
+			dialogueDistance = 1.75 + random.nextDouble() * 0.55;
+			dialogueShotElapsed = 0.0f;
+			// The angle is re-taken at the cut and then belongs to the shot, not to the subject.
+			hasDialogueFacing = false;
+			if (DEBUG) {
+				AbsoluteCinema.LOGGER.info("[camera] dialogue: {}", onSpeaker
+						? "in on " + speaker.getName().getString() : "back to the master");
+			}
+		}
+		dialogueShotElapsed += dt;
 
-		clampOrigin = subjectEye;
-		return new Pose(withDrift(anchor, distance, config), subjectEye);
+		Pose pose = onSpeaker
+				? dialogueSpeakerPose(scene, speaker, config)
+				: dialogueMasterPose(scene, config, dt);
+		if (cutting) {
+			beginDialogueShot(pose);
+		}
+		return pose;
 	}
 
 	/**
-	 * The person on the other end of the conversation, held for as long as the pair is plausibly
-	 * still talking.
+	 * Decides whether this change of frame is a cut or a reframe.
 	 *
-	 * <p>Re-picking every frame meant the choice moved with the subject's gaze, and since a new
-	 * pair means a new cut, someone glancing sideways could re-cut the whole scene. The pair only
-	 * changes when it has to: when the partner leaves, dies, or the conversation moves on.
+	 * <p>A cut is right when the angle really changes — that is what reads as a new shot, and it
+	 * arrives instantly, which matters when a reply lasts a second and a half. But when the next
+	 * speaker is standing beside the last one, the "cut" is a swing of fifteen degrees, and an
+	 * instant jump of fifteen degrees does not read as a new shot at all: it reads as the picture
+	 * twitching. That is a reframe, and an operator would simply pan across.
 	 */
-	@Nullable
-	private Entity keepPartner(MinecraftClient client, @Nullable Entity subject, CinemaConfig config) {
-		if (subject == null) {
-			return null;
+	private void beginDialogueShot(Pose next) {
+		if (!hasPose) {
+			return;
 		}
-		Entity known = null;
-		if (subject == dialogueFirst) {
-			known = dialogueSecond;
-		} else if (subject == dialogueSecond) {
-			// The other one started talking: same pair, the roles simply swap.
-			known = dialogueFirst;
+		Vec3d from = flatten(pos.subtract(next.look()));
+		Vec3d to = flatten(next.pos().subtract(next.look()));
+		double swing = 180.0;
+		if (from.lengthSquared() > 1.0E-6 && to.lengthSquared() > 1.0E-6) {
+			double cosine = MathHelper.clamp(from.normalize().dotProduct(to.normalize()), -1.0, 1.0);
+			swing = Math.toDegrees(Math.acos(cosine));
 		}
-		if (known != null && known != subject && known.isAlive()
-				&& known.squaredDistanceTo(subject) <= config.sceneRadius * config.sceneRadius) {
-			return known;
-		}
-		return findConversationPartner(client, subject, config);
-	}
-
-	private void advanceDialoguePhase(Entity speaker, Entity partner, boolean speakerChanged) {
-		boolean sameParticipants = dialogueFirst == speaker && dialogueSecond == partner;
-		boolean swapped = dialogueFirst == partner && dialogueSecond == speaker && speaker != partner;
-		if (swapped) {
-			// The line runs the other way now, so the same physical side of the room is the
-			// opposite sign. Getting this wrong is exactly what crossing the line looks like.
-			dialogueSide = -dialogueSide;
-			sameParticipants = true;
-		}
-		dialogueFirst = speaker;
-		dialogueSecond = partner;
-
-		if (!sameParticipants) {
-			// Pick a side of the line once, and keep it for as long as this pair is talking.
-			dialogueSide = random.nextBoolean() ? 1.0 : -1.0;
-			dialogueCuts = 0;
-			dialoguePhase = DialoguePhase.TWO_SHOT;
-			dialoguePhaseLeft = 4.0f + random.nextFloat() * 2.0f;
-		} else if (speakerChanged) {
-			dialoguePhase = DialoguePhase.ON_SPEAKER;
-			dialoguePhaseLeft = 5.0f + random.nextFloat() * 3.0f;
-			dialogueCuts++;
+		// The angle alone is misleading up close. Two people at the same table are barely a block
+		// apart, but the camera stands a block and a half away, so moving from one face to the
+		// other swings it through fifty degrees — an angle that reads as a cut when the camera is
+		// across the room, and as a twitch when it is this near. What actually decides how a change
+		// of frame reads is how far the camera travels, so a short move is a pan whatever the angle.
+		double travel = flatten(next.pos().subtract(pos)).length();
+		if (swing <= REFRAME_ANGLE || travel <= REFRAME_DISTANCE) {
+			blendFromPos = pos;
+			blendFromLook = look;
+			blendElapsed = 0.0f;
+			blendDuration = REFRAME_SECONDS;
 		} else {
-			dialogueCuts++;
-			// Reaction shots are short; every fourth cut or so, sit back and hold both of them.
-			if (dialogueCuts % 4 == 0) {
-				dialoguePhase = DialoguePhase.TWO_SHOT;
-				dialoguePhaseLeft = 4.0f + random.nextFloat() * 2.0f;
-			} else if (dialoguePhase == DialoguePhase.ON_SPEAKER) {
-				dialoguePhase = DialoguePhase.ON_LISTENER;
-				dialoguePhaseLeft = 2.4f + random.nextFloat() * 1.2f;
-			} else {
-				dialoguePhase = DialoguePhase.ON_SPEAKER;
-				dialoguePhaseLeft = 5.0f + random.nextFloat() * 3.0f;
-			}
-		}
-
-		dialogueDistance = 1.7 + random.nextDouble() * 0.6;
-		// Instant cut: this is the whole point of the technique.
-		hasPose = false;
-		blendDuration = 0.0f;
-		if (DEBUG) {
-			AbsoluteCinema.LOGGER.info("[camera] dialogue cut to {}", dialoguePhase);
+			// Instant: gliding between opposite angles would fly straight through the people.
+			hasPose = false;
+			blendDuration = 0.0f;
 		}
 	}
 
-	/** The person the subject is most plausibly talking to. */
-	@Nullable
-	private Entity findConversationPartner(MinecraftClient client, @Nullable Entity subject,
-			CinemaConfig config) {
-		if (client.world == null || subject == null) {
-			return null;
-		}
-		Vec3d eye = subject.getEyePos();
-		Vec3d facing = subject.getRotationVec(1.0f);
+	private static Vec3d flatten(Vec3d vector) {
+		return new Vec3d(vector.x, 0.0, vector.z);
+	}
 
-		List<Entity> candidates = new ArrayList<>(client.world.getPlayers());
-		if (config.includeNamedEntities) {
-			// Named creatures are how NPCs are marked, and an NPC is exactly who a scene like
-			// this is usually played against.
-			Box box = subject.getBoundingBox().expand(config.sceneRadius);
-			candidates.addAll(client.world.getEntitiesByClass(LivingEntity.class, box,
-					entity -> entity != subject && entity.hasCustomName()));
+	/** Everybody in one frame, from one side, held for as long as the room is quiet. */
+	private Pose dialogueMasterPose(Scene scene, CinemaConfig config, float dt) {
+		double facing = dialogueAngle(scene.faceYaw, dt);
+		double distance = groupDistance(scene, config);
+
+		// The chosen side may be a wall. Swapping is a lesser evil than filming brickwork, and
+		// only happens when the other side is genuinely better.
+		double here = clearanceTowards(facing + dialogueSide * MASTER_AZIMUTH * DEG);
+		double there = clearanceTowards(facing - dialogueSide * MASTER_AZIMUTH * DEG);
+		if (here < distance * 0.6 && there > here * 1.4) {
+			dialogueSide = -dialogueSide;
 		}
 
-		Entity best = null;
-		double bestScore = Double.MAX_VALUE;
-		for (Entity candidate : candidates) {
-			if (candidate == subject) {
-				continue;
-			}
-			Vec3d delta = candidate.getEyePos().subtract(eye);
-			double distance = delta.length();
-			if (distance < 0.6 || distance > config.sceneRadius) {
-				continue;
-			}
-			// Prefer whoever is both close and roughly in front of them.
-			double alignment = delta.normalize().dotProduct(facing);
-			double score = distance / Math.max(0.35, alignment + 1.0);
-			if (score < bestScore) {
-				bestScore = score;
-				best = candidate;
-			}
+		double angle = facing + dialogueSide * MASTER_AZIMUTH * DEG;
+		Vec3d target = scene.center.add(0.0, scene.eyeHeight - 0.12, 0.0);
+		Vec3d anchor = scene.center.add(
+				-Math.sin(angle) * distance,
+				scene.eyeHeight + 0.4,
+				Math.cos(angle) * distance);
+		if (config.keepEveryoneInFrame) {
+			anchor = fitEveryone(anchor, target, scene, config);
 		}
-		return best;
+		clampOrigin = target;
+		return new Pose(withDrift(anchor, distance, config), target);
+	}
+
+	/**
+	 * In on one face, angled off their own gaze, on the same side of the room as the master.
+	 *
+	 * <p>The shot pushes in slowly while it lasts. A locked close-up is a photograph; the drift
+	 * inwards is what a real close-up does, and it also softens the cut that got us here — the
+	 * frame is already moving when it arrives.
+	 */
+	private Pose dialogueSpeakerPose(Scene scene, Entity speaker, CinemaConfig config) {
+		Vec3d eye = speaker.getLerpedPos(scene.tickProgress).add(0.0, eyeOffset(speaker) - 0.06, 0.0);
+		// The angle is fixed at the cut: a close-up that tracked a live yaw would let the person on
+		// screen swing everybody's camera. Nothing follows here, so no damping is needed either.
+		double facing = dialogueAngle(speaker.getYaw(scene.tickProgress) * DEG, 0.0f);
+		double angle = facing + dialogueSide * SPEAKER_AZIMUTH * DEG;
+		float push = smoothstep(MathHelper.clamp(dialogueShotElapsed / PUSH_SECONDS, 0.0f, 1.0f));
+		double distance = dialogueDistance * MathHelper.lerp(push, 1.0, PUSH_RATIO);
+		Vec3d anchor = eye.add(
+				-Math.sin(angle) * distance,
+				0.09,
+				Math.cos(angle) * distance);
+		clampOrigin = eye;
+		return new Pose(withDrift(anchor, distance, config), eye);
+	}
+
+	/**
+	 * The angle a dialogue frame is shot from: taken once when the shot is composed, and following
+	 * a real turn only slowly. Reading it live would hand the camera to whoever is on screen.
+	 */
+	private double dialogueAngle(double desired, float dt) {
+		if (!hasDialogueFacing) {
+			dialogueFacing = desired;
+			hasDialogueFacing = true;
+		} else {
+			dialogueFacing = followAngle(dialogueFacing, desired, dt);
+		}
+		return dialogueFacing;
 	}
 
 	private Vec3d withDrift(Vec3d anchor, double distance, CinemaConfig config) {
@@ -656,20 +758,39 @@ public final class CameraDirector {
 		List<Entity> participants = new ArrayList<>();
 		participants.add(self);
 		for (AbstractClientPlayerEntity other : world.getPlayers()) {
-			if (other != self && other.squaredDistanceTo(self) <= radius * radius) {
+			if (other != self && inScene(self, other, config)) {
 				participants.add(other);
 			}
 		}
 		if (config.includeNamedEntities) {
 			Box box = self.getBoundingBox().expand(radius);
 			for (Entity entity : world.getEntitiesByClass(LivingEntity.class, box,
-					entity -> entity != self && entity.hasCustomName())) {
+					entity -> entity != self && entity.hasCustomName() && inScene(self, entity, config))) {
 				participants.add(entity);
 			}
 		}
 
 		if (speaker != null && !participants.contains(speaker)) {
 			participants.add(speaker);
+		}
+
+		// The camera belongs to whoever switched it on. Walk far enough away from everybody else
+		// and you have left the scene, whatever the scene radius says — so the camera leaves with
+		// you rather than staying behind to film a conversation you are no longer in.
+		boolean alone = config.leaveSceneDistance > 0.0f && participants.size() > 1
+				&& nearestOther(self, participants, tickProgress) > config.leaveSceneDistance;
+		if (alone) {
+			participants.clear();
+			participants.add(self);
+		}
+		if (alone != leashed) {
+			// Joining a scene or leaving it is a change of subject, and a change of subject is a cut.
+			leashed = alone;
+			leashCutPending = true;
+			if (DEBUG) {
+				AbsoluteCinema.LOGGER.info("[camera] {}", alone
+						? "left the scene — the camera comes along" : "back with the others");
+			}
 		}
 
 		double x = 0.0;
@@ -709,6 +830,39 @@ public final class CameraDirector {
 
 		double room = measureRoom(world, self, center.add(0.0, eyeHeight, 0.0));
 		return new Scene(center, eyeHeight, spread, faceYaw, speaker, count, tickProgress, room, points);
+	}
+
+	/**
+	 * Whether somebody counts as part of the scene: inside the radius, and — unless the limit is
+	 * switched off — on roughly the same level. Without the height test the radius is a sphere, and
+	 * a sphere in a tavern reaches through the floor above: the camera ends up pulling back to hold
+	 * two conversations that cannot see each other.
+	 *
+	 * <p>The test is the plain one, taken fresh every frame. A version that held somebody in the
+	 * scene for a couple of seconds after they stepped outside the radius was tried and taken back
+	 * out: what it fixed — a member flickering at the boundary — was less noticeable than what it
+	 * cost, which was the camera hanging on to a scene the player had already walked away from.
+	 */
+	private static boolean inScene(Entity self, Entity other, CinemaConfig config) {
+		double radius = config.sceneRadius;
+		if (other.squaredDistanceTo(self) > radius * radius) {
+			return false;
+		}
+		return config.sceneHeightLimit <= 0.0f
+				|| Math.abs(other.getY() - self.getY()) <= config.sceneHeightLimit;
+	}
+
+	/** Distance from the player to whoever else is closest, in blocks. */
+	private static double nearestOther(Entity self, List<Entity> participants, float tickProgress) {
+		Vec3d here = self.getLerpedPos(tickProgress);
+		double best = Double.MAX_VALUE;
+		for (Entity entity : participants) {
+			if (entity == self) {
+				continue;
+			}
+			best = Math.min(best, entity.getLerpedPos(tickProgress).distanceTo(here));
+		}
+		return best;
 	}
 
 	/**

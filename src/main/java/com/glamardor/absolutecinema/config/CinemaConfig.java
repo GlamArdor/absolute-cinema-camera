@@ -27,6 +27,9 @@ public class CinemaConfig {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static CinemaConfig instance;
 
+	/** Bumped whenever a default changes in a way an existing file must not keep overriding. */
+	private static final int CURRENT_VERSION = 4;
+
 	// ---- mode -------------------------------------------------------------------------------
 	public CameraMode mode = CameraMode.FIRST_PERSON;
 	public ColorGrade colorGrade = ColorGrade.CAMPFIRE;
@@ -108,9 +111,33 @@ public class CinemaConfig {
 	/** How close something has to be to the lens before it is hidden, in blocks. */
 	public float blockerDistance = 1.8f;
 
+	/**
+	 * How far above or below you somebody may be and still count as part of the scene, in blocks.
+	 * The scene radius alone is a sphere, and a sphere in a tavern reaches through the ceiling: the
+	 * table upstairs joins your conversation and the camera pulls back to hold a building. Roughly
+	 * one storey by default. 0 removes the limit and gives the plain sphere back.
+	 */
+	public float sceneHeightLimit = 4.0f;
+
+	/**
+	 * Raises or lowers every directed frame, in blocks. Emote mods seat and lie people down without
+	 * telling the game, so their eyes stay where a standing player's would be and the camera aims
+	 * at empty air above their head. Nothing in the client can see through that, so this is the
+	 * handle for it.
+	 */
+	public float cameraHeight;
+
+	/**
+	 * How far the player may drift from everybody else before the camera stops filming the group
+	 * and comes with them, in blocks. The camera belongs to the person who turned it on: walking
+	 * away from a scene should not leave them off screen watching a conversation they have left.
+	 * 0 keeps the camera with the group however far they wander.
+	 */
+	public float leaveSceneDistance = 10.0f;
+
 	// ---- speaker focus ----------------------------------------------------------------------
 	/** Seconds of silence before the camera lets go of a speaker and returns to the group. */
-	public float speakerHoldSeconds = 1.2f;
+	public float speakerHoldSeconds = 0.6f;
 	/**
 	 * How briefly the current speaker has to pause before somebody else may take the frame.
 	 * This is what makes short exchanges work: hold is about silence, handover is about a reply.
@@ -130,6 +157,33 @@ public class CinemaConfig {
 	public float speakerMaxDistance = 24.0f;
 	/** Frame the speaker off-centre, the way a real shot would. */
 	public boolean ruleOfThirds = true;
+	/**
+	 * Let the dynamic camera follow whoever is speaking or writing, the same way the speaker focus
+	 * mode does. Turn it off to keep the dynamic camera on the scene as a whole, and the approach
+	 * to a face reserved for the two modes named after it.
+	 */
+	public boolean dynamicFollowsSpeaker = true;
+
+	// ---- roleplay in text ---------------------------------------------------------------------
+	/**
+	 * Treat a chat message or a roleplay emote as a turn, the same as speech. On a roleplay server
+	 * half the scene is played out in text, and a camera deaf to it films the wrong person.
+	 */
+	public boolean reactToChat = true;
+	/** React to your own messages as well. You are a participant in the scene, not just its operator. */
+	public boolean reactToOwnChat = true;
+	/** How long a message holds the frame before its length is counted, in seconds. */
+	public float chatHoldSeconds = 0.8f;
+	/** Extra seconds per hundred characters — roughly how long the message takes to read. */
+	public float chatSecondsPer100 = 5.0f;
+	/** However long the message, the frame is never held past this, in seconds. */
+	public float chatMaxSeconds = 8.0f;
+	/**
+	 * Messages containing any of these are ignored — out-of-character asides, a global channel,
+	 * whatever a given server uses. Matched anywhere in the line, because the server's own prefix
+	 * comes first and the marker sits after it. Empty by default: nothing is guessed for you.
+	 */
+	public List<String> chatIgnore = new ArrayList<>(List.of("((*))"));
 
 	// ---- misc -------------------------------------------------------------------------------
 	/** Show a small toast/action bar note when the mode changes. */
@@ -142,6 +196,18 @@ public class CinemaConfig {
 	public List<SceneProfile> profiles = SceneProfile.defaults();
 	/** Name of the profile applied last, so the cycle key knows where it is. */
 	public String activeProfile = "";
+
+	/**
+	 * Which generation of defaults this file was written by. Gson keeps whatever a stored file
+	 * says, so a timing whose default changes would go on behaving the old way for everybody who
+	 * already has a config — silently, and looking exactly like the fix never landed.
+	 *
+	 * <p>It starts at zero and nowhere else. Gson runs field initialisers and only overwrites what
+	 * the json actually contains, so a field defaulting to the current version would read as
+	 * up-to-date in every file written before the field existed — which is precisely the set of
+	 * files that need migrating.
+	 */
+	public int configVersion;
 
 	public static CinemaConfig get() {
 		if (instance == null) {
@@ -160,6 +226,7 @@ public class CinemaConfig {
 			try (Reader reader = Files.newBufferedReader(path)) {
 				CinemaConfig loaded = GSON.fromJson(reader, CinemaConfig.class);
 				if (loaded != null) {
+					loaded.migrate();
 					loaded.clamp();
 					return loaded;
 				}
@@ -168,6 +235,8 @@ public class CinemaConfig {
 			}
 		}
 		CinemaConfig fresh = new CinemaConfig();
+		// Written by this build, so it never asks to be migrated to itself.
+		fresh.configVersion = CURRENT_VERSION;
 		fresh.save();
 		return fresh;
 	}
@@ -199,7 +268,9 @@ public class CinemaConfig {
 				continue;
 			}
 			String name = field.getName();
-			if (name.equals("profiles") || name.equals("activeProfile")) {
+			// The version is not a setting: resetting it to zero would ask this very file to be
+			// migrated again on the next start.
+			if (name.equals("profiles") || name.equals("activeProfile") || name.equals("configVersion")) {
 				continue;
 			}
 			try {
@@ -208,6 +279,7 @@ public class CinemaConfig {
 				AbsoluteCinema.LOGGER.warn("Could not reset {}", name, e);
 			}
 		}
+		configVersion = CURRENT_VERSION;
 		save();
 	}
 
@@ -278,6 +350,39 @@ public class CinemaConfig {
 		return profiles.get((index + 1) % profiles.size());
 	}
 
+	/**
+	 * Brings a file written by an older build up to date.
+	 *
+	 * <p>Only the settings whose <em>meaning</em> changed are touched, and only once. The speaker
+	 * timings are the case in point: the first playtest showed the camera was far too slow to
+	 * follow a conversation, and the fix was mostly a matter of shorter defaults — which would
+	 * have reached nobody who already had a config, because a stored value always wins.
+	 */
+	private void migrate() {
+		if (configVersion >= CURRENT_VERSION) {
+			configVersion = CURRENT_VERSION;
+			return;
+		}
+		CinemaConfig fresh = new CinemaConfig();
+		speakerHoldSeconds = fresh.speakerHoldSeconds;
+		speakerHandoverSeconds = fresh.speakerHandoverSeconds;
+		minShotSeconds = fresh.minShotSeconds;
+		maxSpeakerFocusSeconds = fresh.maxSpeakerFocusSeconds;
+		speakerBreakSeconds = fresh.speakerBreakSeconds;
+		chatHoldSeconds = fresh.chatHoldSeconds;
+		chatSecondsPer100 = fresh.chatSecondsPer100;
+		chatMaxSeconds = fresh.chatMaxSeconds;
+		if (chatIgnore == null || chatIgnore.isEmpty()) {
+			// Nobody had set anything here, so they get what a fresh install now gets: asides in
+			// double brackets are commentary, not part of the scene.
+			chatIgnore = new ArrayList<>(fresh.chatIgnore);
+		}
+		AbsoluteCinema.LOGGER.info("config updated to version {}: the speaker and message timings "
+				+ "were reset to the new defaults", CURRENT_VERSION);
+		configVersion = CURRENT_VERSION;
+		save();
+	}
+
 	/** Keeps hand-edited json from producing a camera that flies to the moon. */
 	public void clamp() {
 		if (mode == null) {
@@ -308,6 +413,9 @@ public class CinemaConfig {
 		shotSpeed = clamp(shotSpeed, 0.2f, 3.0f);
 		transitionSeconds = clamp(transitionSeconds, 0.2f, 5.0f);
 		sceneRadius = clamp(sceneRadius, 3.0f, 48.0f);
+		leaveSceneDistance = clamp(leaveSceneDistance, 0.0f, 48.0f);
+		sceneHeightLimit = clamp(sceneHeightLimit, 0.0f, 32.0f);
+		cameraHeight = clamp(cameraHeight, -2.0f, 2.0f);
 		blockerDistance = clamp(blockerDistance, 0.5f, 5.0f);
 		speakerHoldSeconds = clamp(speakerHoldSeconds, 0.2f, 15.0f);
 		speakerHandoverSeconds = clamp(speakerHandoverSeconds, 0.0f, 3.0f);
@@ -315,6 +423,14 @@ public class CinemaConfig {
 		maxSpeakerFocusSeconds = clamp(maxSpeakerFocusSeconds, 0.0f, 120.0f);
 		speakerBreakSeconds = clamp(speakerBreakSeconds, 1.0f, 60.0f);
 		speakerMaxDistance = clamp(speakerMaxDistance, 4.0f, 64.0f);
+		chatHoldSeconds = clamp(chatHoldSeconds, 0.0f, 20.0f);
+		chatSecondsPer100 = clamp(chatSecondsPer100, 0.0f, 30.0f);
+		chatMaxSeconds = clamp(chatMaxSeconds, 0.5f, 60.0f);
+		if (chatIgnore == null) {
+			chatIgnore = new ArrayList<>();
+		}
+		chatIgnore = new ArrayList<>(chatIgnore);
+		chatIgnore.removeIf(entry -> entry == null || entry.isBlank());
 	}
 
 	private static float clamp(float value, float min, float max) {

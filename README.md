@@ -12,8 +12,10 @@ need the mod.
 **Letterbox and HUD.** Cinemascope mattes at the top and bottom, sliding in over a configurable
 fade. The HUD, the held item and the hand can all be hidden — each separately. The chat stays
 visible by default and is lifted clear of the bottom matte, because on a roleplay server half the
-scene happens in text; hide it too if you want a completely clean frame. The F3 debug overlay
-deliberately stays visible so you can still read the framerate while filming.
+scene happens in text; hide it too if you want a completely clean frame. The crosshair goes
+regardless of what else you keep — in the directed modes the camera is nowhere near your eyes, so
+it would sit in the middle of the picture pointing at nothing. The F3 debug overlay deliberately
+stays visible so you can still read the framerate while filming.
 
 **Colour grading.** Twenty looks, applied through a three-way colour corrector (lift / gamma /
 gain) plus saturation, contrast, glow, grain, chromatic aberration, exposure flicker, image warp
@@ -78,14 +80,14 @@ suits — the bright and stylised looks stay sharp across the whole frame even w
   enough for somebody else to take the frame, while a room that has simply gone quiet holds the
   last speaker a while longer. A turn also has a maximum length, so an open mic or a held talk
   key cannot own the camera for the rest of the evening.
-- *Dialogue* — shot-reverse-shot, the way films have covered conversations for a century: hold
-  the speaker, cut to the listener for their reaction, and every fourth cut or so pull back into
-  a two shot holding both. Who counts as the speaker comes from Simple Voice Chat when it is
-  installed; without it the mode simply alternates between the two nearest participants, so it
-  is still useful on a text-only server. The camera picks one side of the line between the pair and never
-  crosses it, because crossing it makes them swap sides of the screen between cuts and the scene
-  stops reading. Cuts here are instant on purpose — gliding between opposite angles would fly
-  straight through the people.
+- *Dialogue* — how one operator with one camera covers a conversation: hold everybody in a master
+  shot, cut in to whoever starts speaking, cut back out the moment they stop. Two people or a table
+  of five makes no difference — nobody is dropped from the film for not being in the pair, which is
+  what a strict two-person shot-reverse-shot did here. Who counts as the speaker comes from Simple
+  Voice Chat, or from the chat — see below. The camera keeps to one side of the group and never
+  crosses it, because crossing
+  makes everyone swap sides of the screen between cuts and the scene stops reading. Cuts here are
+  instant on purpose — gliding between opposite angles would fly straight through the people.
 - *Tripod* — locked off wherever you planted it, turning only to keep the scene in frame. Put the
   camera down, walk into shot, play the scene. For speeches, trials, performances, and long talks
   where constant orbits get tiring.
@@ -107,6 +109,29 @@ is spread out. A few rays a second confirm the scene is actually visible and not
 a shot of nothing is dropped for a better angle. Signs, item frames and other clutter with no
 collision cannot be pushed away from the lens, so anything that ends up right in front of it is
 simply not drawn.
+
+**Roleplay played out in text.** Half of every scene on a roleplay server is typed rather than
+spoken — a `/me`, a `/do`, a line of dialogue — and a camera that only listens for voices spends
+that half filming the wrong person. So a message counts as a turn too, and the camera cuts to
+whoever wrote it.
+
+Finding out who wrote it takes no server-side plugin. Ordinary player chat carries the sender in
+the packet. Everything a chat plugin has reformatted arrives as a system message with no author
+attached anywhere — but servers habitually decorate the name with the vanilla `show_entity`
+hover, the tooltip you get pointing at somebody's message, and that hover is by definition an
+entity type and a UUID. The author is therefore read out of decoration the server was already
+sending.
+
+A message is not treated as speech, because it is not one. Speech is a duration; a message is an
+instant with a reading time attached, so the frame is held for a couple of seconds plus however
+long the line takes to read, capped. A live voice always outranks writing. Anything containing a
+marker you have listed — an out-of-character `((`, a global channel prefix — is ignored, and so is
+anybody too far away to be in the shot.
+
+The camera belongs to whoever switched it on. Walk ten blocks away from everybody else and you
+have left the scene, whatever the scene radius says — so the camera leaves with you, rather than
+staying behind to film a conversation you are no longer part of. The distance is configurable, and
+can be switched off.
 
 One thing the camera deliberately ignores is where people are looking. A shot's angle belongs to
 the shot: it is fixed when the shot is composed and only follows someone who genuinely turns

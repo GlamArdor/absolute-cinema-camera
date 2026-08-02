@@ -4,9 +4,11 @@ import com.glamardor.absolutecinema.camera.CameraDirector;
 import com.glamardor.absolutecinema.config.CameraMode;
 import com.glamardor.absolutecinema.config.CinemaConfig;
 import com.glamardor.absolutecinema.config.ColorGrade;
+import com.glamardor.absolutecinema.render.SceneDome;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.gui.entries.IntegerSliderEntry;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
@@ -25,33 +27,51 @@ final class ClothConfigScreens {
 	private ClothConfigScreens() {
 	}
 
+	/** Widgets to read back into the config every tick, so the picture follows the sliders. */
+	private static final java.util.List<Runnable> LIVE = new java.util.ArrayList<>();
+
 	static Screen build(@Nullable Screen parent) {
 		CinemaConfig config = CinemaConfig.get();
 		CinemaConfig defaults = new CinemaConfig();
+		LIVE.clear();
 
 		ConfigBuilder builder = ConfigBuilder.create()
 				.setParentScreen(parent)
 				.setTitle(Text.translatable("absolutecinema.config.title"))
 				.setSavingRunnable(() -> {
+					LivePreview.markSaved();
 					config.save();
 					CameraDirector.get().reset();
 				});
+		// See the room while setting it up: the scene radius is drawn around the player, and a
+		// solid menu background would hide the very thing the slider is adjusting.
+		builder.setTransparentBackground(true);
+		// One long list with the categories down the side, rather than tabs. Tabbed, the search box
+		// only ever looks inside the tab you are standing in, so finding a setting means knowing
+		// which of six tabs it lives in first — which is exactly what a search is for.
+		builder.setGlobalized(true);
+		builder.setGlobalizedExpanded(true);
 
 		ConfigEntryBuilder entries = builder.entryBuilder();
 
 		ConfigCategory general = builder.getOrCreateCategory(Text.translatable("absolutecinema.category.general"));
-		general.addEntry(entries.startEnumSelector(text("mode"), CameraMode.class, config.mode)
+		var modeEntry = entries.startEnumSelector(text("mode"), CameraMode.class, config.mode)
 				.setDefaultValue(defaults.mode)
 				.setEnumNameProvider(value -> ((CameraMode) value).getDisplayName())
 				.setTooltip(tooltip("mode"))
 				.setSaveConsumer(value -> config.mode = value)
-				.build());
-		general.addEntry(entries.startEnumSelector(text("grade"), ColorGrade.class, config.colorGrade)
+				.build();
+		general.addEntry(modeEntry);
+		LIVE.add(() -> config.mode = modeEntry.getValue());
+
+		var gradeEntry = entries.startEnumSelector(text("grade"), ColorGrade.class, config.colorGrade)
 				.setDefaultValue(defaults.colorGrade)
 				.setEnumNameProvider(value -> ((ColorGrade) value).getDisplayName())
 				.setTooltip(tooltip("grade"))
 				.setSaveConsumer(value -> config.colorGrade = value)
-				.build());
+				.build();
+		general.addEntry(gradeEntry);
+		LIVE.add(() -> config.colorGrade = gradeEntry.getValue());
 		general.addEntry(percent(entries, "grade_strength", config.gradeStrength, defaults.gradeStrength,
 				value -> config.gradeStrength = value));
 		general.addEntry(toggle(entries, "announce", config.announceToggle, defaults.announceToggle,
@@ -120,8 +140,26 @@ final class ClothConfigScreens {
 				value -> config.handheldDrift = value));
 		directed.addEntry(toggle(entries, "avoid_walls", config.avoidWalls, defaults.avoidWalls,
 				value -> config.avoidWalls = value));
-		directed.addEntry(blocks(entries, "scene_radius", config.sceneRadius, defaults.sceneRadius,
-				value -> config.sceneRadius = value, 3, 48));
+		// Held on to rather than just added: the dome drawn around the player reads these two while
+		// they are being dragged, so the shape follows the slider instead of jumping on save.
+		IntegerSliderEntry radiusSlider = blocksSlider(entries, "scene_radius", config.sceneRadius,
+				defaults.sceneRadius, value -> config.sceneRadius = value, 3, 48);
+		IntegerSliderEntry heightSlider = blocksSlider(entries, "scene_height", config.sceneHeightLimit,
+				defaults.sceneHeightLimit, value -> config.sceneHeightLimit = value, 0, 32);
+		directed.addEntry(radiusSlider);
+		directed.addEntry(heightSlider);
+		SceneDome.preview(radiusSlider::getValue, heightSlider::getValue);
+		directed.addEntry(blocks(entries, "leave_scene", config.leaveSceneDistance,
+				defaults.leaveSceneDistance, value -> config.leaveSceneDistance = value, 0, 48));
+		IntegerSliderEntry heightEntry = entries.startIntSlider(text("camera_height"),
+						Math.round(config.cameraHeight * 100.0f), -200, 200)
+				.setDefaultValue(Math.round(defaults.cameraHeight * 100.0f))
+				.setTextGetter(v -> Text.literal(String.format("%+.2f", v / 100.0f)))
+				.setTooltip(tooltip("camera_height"))
+				.setSaveConsumer(v -> config.cameraHeight = v / 100.0f)
+				.build();
+		directed.addEntry(heightEntry);
+		LIVE.add(() -> config.cameraHeight = heightEntry.getValue() / 100.0f);
 		directed.addEntry(toggle(entries, "include_named", config.includeNamedEntities,
 				defaults.includeNamedEntities, value -> config.includeNamedEntities = value));
 		directed.addEntry(toggle(entries, "keep_everyone", config.keepEveryoneInFrame,
@@ -146,17 +184,57 @@ final class ClothConfigScreens {
 				value -> config.speakerMaxDistance = value, 4, 64));
 		speaker.addEntry(toggle(entries, "rule_of_thirds", config.ruleOfThirds, defaults.ruleOfThirds,
 				value -> config.ruleOfThirds = value));
+		speaker.addEntry(toggle(entries, "dynamic_follows", config.dynamicFollowsSpeaker,
+				defaults.dynamicFollowsSpeaker, value -> config.dynamicFollowsSpeaker = value));
 
-		return builder.build();
+		speaker.addEntry(toggle(entries, "react_to_chat", config.reactToChat, defaults.reactToChat,
+				value -> config.reactToChat = value));
+		speaker.addEntry(toggle(entries, "react_to_own_chat", config.reactToOwnChat,
+				defaults.reactToOwnChat, value -> config.reactToOwnChat = value));
+		speaker.addEntry(seconds(entries, "chat_hold", config.chatHoldSeconds, defaults.chatHoldSeconds,
+				value -> config.chatHoldSeconds = value, 0, 2000));
+		speaker.addEntry(seconds(entries, "chat_per_100", config.chatSecondsPer100, defaults.chatSecondsPer100,
+				value -> config.chatSecondsPer100 = value, 0, 3000));
+		speaker.addEntry(seconds(entries, "chat_max", config.chatMaxSeconds, defaults.chatMaxSeconds,
+				value -> config.chatMaxSeconds = value, 50, 6000));
+		// One comma-separated line rather than Cloth's editable list: the list widget hides its
+		// text box behind an expander, and a "+" that appears to do nothing is worse than no
+		// setting at all.
+		var ignoreField = entries.startStrField(text("chat_ignore"), String.join(", ", config.chatIgnore))
+				.setDefaultValue(String.join(", ", defaults.chatIgnore))
+				.setTooltip(tooltip("chat_ignore"))
+				.setSaveConsumer(value -> config.chatIgnore = splitMarkers(value))
+				.build();
+		speaker.addEntry(ignoreField);
+		LIVE.add(() -> config.chatIgnore = splitMarkers(ignoreField.getValue()));
+
+		Screen screen = builder.build();
+		LivePreview.start(screen, LIVE);
+		SceneDome.arm(screen);
+		return screen;
+	}
+
+	/** Commas separate the markers; a marker may still contain spaces, so only the commas count. */
+	private static java.util.List<String> splitMarkers(String value) {
+		java.util.List<String> markers = new java.util.ArrayList<>();
+		for (String piece : value.split(",")) {
+			String marker = piece.trim();
+			if (!marker.isEmpty()) {
+				markers.add(marker);
+			}
+		}
+		return markers;
 	}
 
 	private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<?> toggle(ConfigEntryBuilder entries,
 			String key, boolean value, boolean fallback, Consumer<Boolean> save) {
-		return entries.startBooleanToggle(text(key), value)
+		var entry = entries.startBooleanToggle(text(key), value)
 				.setDefaultValue(fallback)
 				.setTooltip(tooltip(key))
 				.setSaveConsumer(save)
 				.build();
+		LIVE.add(() -> save.accept(entry.getValue()));
+		return entry;
 	}
 
 	private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<?> percent(ConfigEntryBuilder entries,
@@ -166,33 +244,45 @@ final class ClothConfigScreens {
 
 	private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<?> percent(ConfigEntryBuilder entries,
 			String key, float value, float fallback, Consumer<Float> save, int min, int max) {
-		return entries.startIntSlider(text(key), Math.round(value * PERCENT), min, max)
+		IntegerSliderEntry entry = entries.startIntSlider(text(key), Math.round(value * PERCENT), min, max)
 				.setDefaultValue(Math.round(fallback * PERCENT))
 				.setTextGetter(v -> Text.literal(v + "%"))
 				.setTooltip(tooltip(key))
 				.setSaveConsumer(v -> save.accept(v / (float) PERCENT))
 				.build();
+		LIVE.add(() -> save.accept(entry.getValue() / (float) PERCENT));
+		return entry;
 	}
 
 	/** Seconds edited in hundredths so the slider has a usable resolution. */
 	private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<?> seconds(ConfigEntryBuilder entries,
 			String key, float value, float fallback, Consumer<Float> save, int min, int max) {
-		return entries.startIntSlider(text(key), Math.round(value * PERCENT), min, max)
+		IntegerSliderEntry entry = entries.startIntSlider(text(key), Math.round(value * PERCENT), min, max)
 				.setDefaultValue(Math.round(fallback * PERCENT))
 				.setTextGetter(v -> Text.translatable("absolutecinema.unit.seconds", String.format("%.1f", v / 100.0f)))
 				.setTooltip(tooltip(key))
 				.setSaveConsumer(v -> save.accept(v / (float) PERCENT))
 				.build();
+		LIVE.add(() -> save.accept(entry.getValue() / (float) PERCENT));
+		return entry;
 	}
 
 	private static me.shedaniel.clothconfig2.api.AbstractConfigListEntry<?> blocks(ConfigEntryBuilder entries,
 			String key, float value, float fallback, Consumer<Float> save, int min, int max) {
-		return entries.startIntSlider(text(key), Math.round(value), min, max)
+		return blocksSlider(entries, key, value, fallback, save, min, max);
+	}
+
+	/** The same slider, but typed, so its live value can be read while it is being dragged. */
+	private static IntegerSliderEntry blocksSlider(ConfigEntryBuilder entries, String key, float value,
+			float fallback, Consumer<Float> save, int min, int max) {
+		IntegerSliderEntry entry = entries.startIntSlider(text(key), Math.round(value), min, max)
 				.setDefaultValue(Math.round(fallback))
 				.setTextGetter(v -> Text.translatable("absolutecinema.unit.blocks", v))
 				.setTooltip(tooltip(key))
 				.setSaveConsumer(v -> save.accept((float) v))
 				.build();
+		LIVE.add(() -> save.accept((float) entry.getValue()));
+		return entry;
 	}
 
 	private static Text text(String key) {

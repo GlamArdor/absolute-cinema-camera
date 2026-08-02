@@ -64,7 +64,18 @@ public final class CinemaCommands {
 												.suggests(CinemaCommands::suggestProfiles)
 												.executes(CinemaCommands::applyProfile))))
 						.then(ClientCommandManager.literal("tripod")
-								.executes(CinemaCommands::placeTripod))));
+								.executes(CinemaCommands::placeTripod))
+						// Diagnostic: what a server actually sends when somebody plays a scene out
+						// in text. Off by default and self-stopping.
+						.then(ClientCommandManager.literal("chatdump")
+								.executes(context -> startDump(context, 30))
+								.then(ClientCommandManager.literal("off")
+										.executes(CinemaCommands::stopDump))
+								.then(ClientCommandManager.argument("count",
+												com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 500))
+										.executes(context -> startDump(context,
+												com.mojang.brigadier.arguments.IntegerArgumentType
+														.getInteger(context, "count")))))));
 	}
 
 	// ---- scene profiles ---------------------------------------------------------------------
@@ -118,6 +129,21 @@ public final class CinemaCommands {
 		}
 		context.getSource().sendFeedback(Text.translatable("absolutecinema.msg.profile_deleted", name));
 		return 1;
+	}
+
+	// ---- chat probe -------------------------------------------------------------------------
+
+	private static int startDump(CommandContext<FabricClientCommandSource> context, int count) {
+		java.nio.file.Path file = com.glamardor.absolutecinema.chat.ChatProbe.start(count);
+		context.getSource().sendFeedback(Text.translatable("absolutecinema.msg.chatdump_on",
+				count, file.toString()));
+		return count;
+	}
+
+	private static int stopDump(CommandContext<FabricClientCommandSource> context) {
+		int total = com.glamardor.absolutecinema.chat.ChatProbe.stop();
+		context.getSource().sendFeedback(Text.translatable("absolutecinema.msg.chatdump_done", total));
+		return total;
 	}
 
 	/** Plants the tripod at the player's eye point, wherever they are standing right now. */
