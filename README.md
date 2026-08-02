@@ -12,6 +12,14 @@ need the mod.
 **[Watch it film a conversation](https://youtu.be/VNlPeCYkjGI)** — one continuous take, nothing cut
 afterwards. Every change of frame is the mod deciding who has the floor.
 
+<video src="https://codeberg.org/attachments/9a193fb1-e2f2-4038-9734-d1b570f85169" controls width="720" preload="none" poster="https://cdn.modrinth.com/data/WoK9thlP/images/70892e29075993100e66b888ed88e303283d9983.jpg"></video>
+
+<!--
+Two players, one for each home. Codeberg's markdown keeps <video> and strips
+<iframe>; Modrinth is the other way round. The Modrinth description is built
+from this file with the <video> element removed, so neither page ends up
+showing the same take twice.
+-->
 <iframe width="560" height="315" src="https://www.youtube.com/embed/VNlPeCYkjGI" title="Absolute Cinema Camera — the camera cuts to whoever is talking" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## What it does
