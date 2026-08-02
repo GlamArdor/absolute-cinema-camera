@@ -194,10 +194,17 @@ director log what they are doing.
 
 ## Settings
 
-With [Cloth Config](https://modrinth.com/mod/cloth-config) installed the settings open as a
-six-category screen from [Mod Menu](https://modrinth.com/mod/modmenu); remember to press
-**Save changes**, since Cloth discards edits on Escape. Without Cloth the mod falls back to its
-own built-in screen, which applies everything immediately.
+With [Cloth Config](https://modrinth.com/mod/cloth-config) installed the settings open from
+[Mod Menu](https://modrinth.com/mod/modmenu) as one searchable list; remember to press **Save
+changes**, since Cloth discards edits on Escape. Without Cloth the mod falls back to its own
+built-in screen, which applies everything immediately and covers exactly the same settings.
+
+Every setting takes effect while the screen is open, so a shot can be framed by looking at it
+rather than by guessing, saving, closing and going back in. The background behind that screen is
+left clear for the same reason. And while the scene radius is being changed, the shape it actually
+tests is drawn around the player in green — a sphere of that radius, cut flat top and bottom by
+the height limit — so it can be set by seeing who falls inside it. It stays up for a few seconds
+after the settings close, which is long enough to turn round and look.
 
 ## Requirements
 
@@ -210,6 +217,10 @@ own built-in screen, which applies everything immediately.
 
 Other versions need a separate build: 1.21–1.21.5 use the old shader system, and 1.21.9+
 reworked the renderer again.
+
+## Thanks
+
+Thanks to **Contik**, **Cmetanochkaa**, **Gizmons_** and **Morda_** for testing the mod.
 
 ## Licence
 

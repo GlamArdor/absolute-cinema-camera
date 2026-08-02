@@ -1,7 +1,6 @@
 package com.glamardor.absolutecinema;
 
 import com.glamardor.absolutecinema.camera.CameraDirector;
-import com.glamardor.absolutecinema.chat.ChatProbe;
 import com.glamardor.absolutecinema.chat.ChatWatcher;
 import com.glamardor.absolutecinema.config.CinemaConfig;
 import com.glamardor.absolutecinema.gui.ConfigScreenFactory;
@@ -48,7 +47,6 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 
 		ClientTickEvents.END_CLIENT_TICK.register(AbsoluteCinemaClient::onTick);
 		CinemaCommands.register();
-		ChatProbe.register();
 		ChatWatcher.register();
 		SceneDome.register();
 

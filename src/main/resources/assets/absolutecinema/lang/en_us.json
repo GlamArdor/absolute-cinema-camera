@@ -6,7 +6,6 @@
 	"key.absolutecinema.grade": "Next colour grade",
 	"key.absolutecinema.profile": "Next scene profile",
 	"key.absolutecinema.tripod": "Plant the tripod here",
-
 	"absolutecinema.mode.first_person": "First person",
 	"absolutecinema.mode.first_person.desc": "You keep control of the camera; the mod only smooths it.",
 	"absolutecinema.mode.dynamic": "Dynamic camera",
@@ -19,7 +18,6 @@
 	"absolutecinema.mode.tripod.desc": "The camera stays where you planted it and only turns to follow the scene.",
 	"absolutecinema.mode.side_track": "Side track",
 	"absolutecinema.mode.side_track.desc": "Travels alongside, keeping pace — for walks, processions and rides.",
-
 	"absolutecinema.grade.none": "No grade",
 	"absolutecinema.grade.campfire": "By the campfire",
 	"absolutecinema.grade.overcast_morning": "Overcast morning",
@@ -40,7 +38,6 @@
 	"absolutecinema.grade.drunk": "Drunk",
 	"absolutecinema.grade.noble_study": "Noble study",
 	"absolutecinema.grade.grand_ball": "Grand ball",
-
 	"absolutecinema.msg.enabled": "Cinema mode on — %s",
 	"absolutecinema.msg.disabled": "Cinema mode off",
 	"absolutecinema.msg.mode": "Camera mode: %s",
@@ -54,24 +51,18 @@
 	"absolutecinema.msg.no_profiles": "No scene profiles",
 	"absolutecinema.msg.no_such_profile": "No profile called \"%s\"",
 	"absolutecinema.msg.tripod_placed": "Tripod planted here",
-	"absolutecinema.msg.chatdump_on": "Recording the next %s chat messages into %s",
-	"absolutecinema.msg.chatdump_done": "Chat recording finished — %s messages written",
-
 	"absolutecinema.config.title": "Absolute Cinema Camera",
 	"absolutecinema.config.no_cloth": "Install Cloth Config for the full settings screen",
 	"absolutecinema.config.reset": "Reset settings",
 	"absolutecinema.config.reset.tooltip": "Puts every setting back to its default. Saved scene profiles are kept.",
-
 	"absolutecinema.category.general": "General",
 	"absolutecinema.category.filters": "Filters",
 	"absolutecinema.category.dof": "Depth of field",
 	"absolutecinema.category.first_person": "First person",
 	"absolutecinema.category.directed": "Directed camera",
 	"absolutecinema.category.speaker": "Speaker focus",
-
 	"absolutecinema.unit.seconds": "%s s",
 	"absolutecinema.unit.blocks": "%s blocks",
-
 	"absolutecinema.option.mode": "Camera mode",
 	"absolutecinema.option.mode.tooltip": "How the camera behaves while filming.",
 	"absolutecinema.option.grade": "Colour grade",
@@ -82,7 +73,6 @@
 	"absolutecinema.option.announce.tooltip": "Show a line above the hotbar when the mode or grade changes.",
 	"absolutecinema.option.exit_on_damage": "Interrupt on damage",
 	"absolutecinema.option.exit_on_damage.tooltip": "Instantly drops out of cinema mode when you take damage, so nobody can ambush you mid-scene.",
-
 	"absolutecinema.option.letterbox": "Black bars",
 	"absolutecinema.option.letterbox.tooltip": "The cinemascope mattes at the top and bottom.",
 	"absolutecinema.option.hide_hud": "Hide HUD",
@@ -105,7 +95,6 @@
 	"absolutecinema.option.letterbox_size.tooltip": "Height of one black bar as a share of the screen.",
 	"absolutecinema.option.letterbox_fade": "Fade time",
 	"absolutecinema.option.letterbox_fade.tooltip": "How long the whole effect takes to come in and out.",
-
 	"absolutecinema.option.dof_strength": "Blur strength",
 	"absolutecinema.option.dof_strength.tooltip": "How soft out-of-focus areas get.",
 	"absolutecinema.option.dof_auto_focus": "Auto focus",
@@ -118,14 +107,12 @@
 	"absolutecinema.option.dof_foreground.tooltip": "Also soften what is closer than the focus plane. Off by default: it visibly ghosts the ground at your feet.",
 	"absolutecinema.option.dof_foreground_amount": "Foreground amount",
 	"absolutecinema.option.dof_foreground_amount.tooltip": "How much of the blur the foreground gets.",
-
 	"absolutecinema.option.rotation_smoothing": "Rotation smoothing",
 	"absolutecinema.option.rotation_smoothing.tooltip": "Higher values make the camera follow your mouse more slowly.",
 	"absolutecinema.option.position_smoothing": "Position smoothing",
 	"absolutecinema.option.position_smoothing.tooltip": "Softens walking, jumping and head bob.",
 	"absolutecinema.option.stabilize": "Stabilised view",
 	"absolutecinema.option.stabilize.tooltip": "Removes the walking sway and the jolt when you take damage. No camera on a real set rocks with the operator's steps.",
-
 	"absolutecinema.option.shot_duration": "Shot length",
 	"absolutecinema.option.shot_duration.tooltip": "Average time before the camera picks a new shot.",
 	"absolutecinema.option.shot_distance": "Shot distance",
@@ -170,7 +157,6 @@
 	"absolutecinema.option.hide_blockers.tooltip": "Hides signs, frames and other clutter that ends up right in front of the camera. They have no collision, so nothing else can stop them filling the frame.",
 	"absolutecinema.option.blocker_distance": "Lens clearance",
 	"absolutecinema.option.blocker_distance.tooltip": "How close something has to be to the lens before it is hidden.",
-
 	"absolutecinema.option.speaker_hold": "Hold on speaker",
 	"absolutecinema.option.speaker_hold.tooltip": "How long the camera stays on the last speaker once the room falls silent.",
 	"absolutecinema.option.speaker_handover": "Handover pause",

@@ -6,7 +6,6 @@
 	"key.absolutecinema.grade": "Следующая цветокоррекция",
 	"key.absolutecinema.profile": "Следующий профиль сцены",
 	"key.absolutecinema.tripod": "Поставить штатив здесь",
-
 	"absolutecinema.mode.first_person": "От первого лица",
 	"absolutecinema.mode.first_person.desc": "Камерой управляете вы, мод только сглаживает движения.",
 	"absolutecinema.mode.dynamic": "Динамичная камера",
@@ -19,7 +18,6 @@
 	"absolutecinema.mode.tripod.desc": "Камера остаётся там, где её поставили, и только поворачивается за сценой.",
 	"absolutecinema.mode.side_track": "Сопровождение",
 	"absolutecinema.mode.side_track.desc": "Камера идёт сбоку, не отставая — для прогулок, шествий и выездов.",
-
 	"absolutecinema.grade.none": "Без коррекции",
 	"absolutecinema.grade.campfire": "У костра",
 	"absolutecinema.grade.overcast_morning": "Пасмурное утро",
@@ -40,7 +38,6 @@
 	"absolutecinema.grade.drunk": "Хмель",
 	"absolutecinema.grade.noble_study": "Кабинет аристократа",
 	"absolutecinema.grade.grand_ball": "Званый вечер",
-
 	"absolutecinema.msg.enabled": "Кино-режим включён — %s",
 	"absolutecinema.msg.disabled": "Кино-режим выключен",
 	"absolutecinema.msg.mode": "Режим камеры: %s",
@@ -54,24 +51,18 @@
 	"absolutecinema.msg.no_profiles": "Профилей сцен нет",
 	"absolutecinema.msg.no_such_profile": "Профиль «%s» не найден",
 	"absolutecinema.msg.tripod_placed": "Штатив установлен здесь",
-	"absolutecinema.msg.chatdump_on": "Записываю следующие %s сообщений чата в %s",
-	"absolutecinema.msg.chatdump_done": "Запись чата закончена — сообщений записано: %s",
-
 	"absolutecinema.config.title": "Absolute Cinema Camera",
 	"absolutecinema.config.no_cloth": "Установите Cloth Config для полноценного меню настроек",
 	"absolutecinema.config.reset": "Сбросить настройки",
 	"absolutecinema.config.reset.tooltip": "Возвращает все настройки к значениям по умолчанию. Сохранённые профили сцен остаются на месте.",
-
 	"absolutecinema.category.general": "Основное",
 	"absolutecinema.category.filters": "Фильтры",
 	"absolutecinema.category.dof": "Глубина резкости",
 	"absolutecinema.category.first_person": "От первого лица",
 	"absolutecinema.category.directed": "Кинокамера",
 	"absolutecinema.category.speaker": "Фокус на говорящего",
-
 	"absolutecinema.unit.seconds": "%s с",
 	"absolutecinema.unit.blocks": "%s бл.",
-
 	"absolutecinema.option.mode": "Режим камеры",
 	"absolutecinema.option.mode.tooltip": "Как ведёт себя камера во время съёмки.",
 	"absolutecinema.option.grade": "Цветокоррекция",
@@ -82,7 +73,6 @@
 	"absolutecinema.option.announce.tooltip": "Показывать строку над хотбаром при смене режима или пресета.",
 	"absolutecinema.option.exit_on_damage": "Прерывать при уроне",
 	"absolutecinema.option.exit_on_damage.tooltip": "Мгновенно выключает кино-режим при получении урона, чтобы вас нельзя было застать врасплох во время сцены.",
-
 	"absolutecinema.option.letterbox": "Чёрные полосы",
 	"absolutecinema.option.letterbox.tooltip": "Кинематографичные полосы сверху и снизу.",
 	"absolutecinema.option.hide_hud": "Скрывать интерфейс",
@@ -105,7 +95,6 @@
 	"absolutecinema.option.letterbox_size.tooltip": "Высота одной полосы в долях экрана.",
 	"absolutecinema.option.letterbox_fade": "Время появления",
 	"absolutecinema.option.letterbox_fade.tooltip": "За сколько эффект плавно включается и выключается.",
-
 	"absolutecinema.option.dof_strength": "Сила размытия",
 	"absolutecinema.option.dof_strength.tooltip": "Насколько мягким становится то, что вне фокуса.",
 	"absolutecinema.option.dof_auto_focus": "Автофокус",
@@ -118,14 +107,12 @@
 	"absolutecinema.option.dof_foreground.tooltip": "Смягчать и то, что ближе точки фокуса. Выключено по умолчанию: даёт заметное двоение земли под ногами.",
 	"absolutecinema.option.dof_foreground_amount": "Сила на переднем плане",
 	"absolutecinema.option.dof_foreground_amount.tooltip": "Какую долю размытия получает передний план.",
-
 	"absolutecinema.option.rotation_smoothing": "Сглаживание поворота",
 	"absolutecinema.option.rotation_smoothing.tooltip": "Чем больше, тем ленивее камера следует за мышью.",
 	"absolutecinema.option.position_smoothing": "Сглаживание позиции",
 	"absolutecinema.option.position_smoothing.tooltip": "Смягчает ходьбу, прыжки и покачивание головы.",
 	"absolutecinema.option.stabilize": "Стабилизация обзора",
 	"absolutecinema.option.stabilize.tooltip": "Убирает раскачивание при ходьбе и рывок при получении урона. Настоящая камера не качается в такт шагам оператора.",
-
 	"absolutecinema.option.shot_duration": "Длина кадра",
 	"absolutecinema.option.shot_duration.tooltip": "Среднее время до смены кадра.",
 	"absolutecinema.option.shot_distance": "Дистанция кадра",
@@ -170,7 +157,6 @@
 	"absolutecinema.option.hide_blockers.tooltip": "Скрывает таблички, рамки и прочее, что оказалось вплотную перед камерой. У них нет коллизии, поэтому иначе их ничем не отодвинуть.",
 	"absolutecinema.option.blocker_distance": "Радиус очистки",
 	"absolutecinema.option.blocker_distance.tooltip": "На каком расстоянии от объектива предмет считается помехой.",
-
 	"absolutecinema.option.speaker_hold": "Удержание говорящего",
 	"absolutecinema.option.speaker_hold.tooltip": "Сколько камера остаётся на последнем говорившем, когда все замолчали.",
 	"absolutecinema.option.speaker_handover": "Пауза для передачи",
