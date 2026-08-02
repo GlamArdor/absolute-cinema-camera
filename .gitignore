@@ -25,3 +25,6 @@ bin/
 # OS
 .DS_Store
 Thumbs.db
+
+# Original screenshots: the web-sized copies in screens/web are what ships.
+screens/*.png

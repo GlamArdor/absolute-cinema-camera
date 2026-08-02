@@ -7,6 +7,8 @@ either smooths out your own movement or detaches entirely and shoots the scene f
 Built for roleplay servers — nothing is required on the server side, and other players do not
 need the mod.
 
+![A table, held whole](https://cdn.modrinth.com/data/WoK9thlP/images/70892e29075993100e66b888ed88e303283d9983.jpg)
+
 ## What it does
 
 **Letterbox and HUD.** Cinemascope mattes at the top and bottom, sliding in over a configurable
@@ -53,6 +55,8 @@ the key stays predictable:
 Vignette and film grain are separate toggles that apply to every preset, and the whole grade has
 a strength slider.
 
+![Drunk](https://cdn.modrinth.com/data/WoK9thlP/images/16ab27e6c8e3ae0c59d3bef57b338ed707a3e1d0.jpg)
+
 **Combat interrupt.** Taking damage drops the mode instantly, with no fade — so nobody can
 ambush you while you are watching a camera orbit. It can be switched off.
 
@@ -88,6 +92,12 @@ suits — the bright and stylised looks stay sharp across the whole frame even w
   crosses it, because crossing
   makes everyone swap sides of the screen between cuts and the scene stops reading. Cuts here are
   instant on purpose — gliding between opposite angles would fly straight through the people.
+
+  Three consecutive frames from one conversation, with nobody touching a key between them:
+
+  ![Somebody speaks](https://cdn.modrinth.com/data/WoK9thlP/images/4be9ec569cb8e62b5f7230bb152ba5f725cf993a.jpg)
+  ![Somebody answers](https://cdn.modrinth.com/data/WoK9thlP/images/667027c60d9c0d2976f7be772a7239f7f52cea93.jpg)
+  ![And the third](https://cdn.modrinth.com/data/WoK9thlP/images/f423254980263016e1cb1005a1ec732a4d38a565.jpg)
 - *Tripod* — locked off wherever you planted it, turning only to keep the scene in frame. Put the
   camera down, walk into shot, play the scene. For speeches, trials, performances, and long talks
   where constant orbits get tiring.
@@ -205,6 +215,8 @@ left clear for the same reason. And while the scene radius is being changed, the
 tests is drawn around the player in green — a sphere of that radius, cut flat top and bottom by
 the height limit — so it can be set by seeing who falls inside it. It stays up for a few seconds
 after the settings close, which is long enough to turn round and look.
+
+![Settings, with the scene radius drawn in the world](https://cdn.modrinth.com/data/WoK9thlP/images/6c81981f6f8bed4fd04f06b40b4d69a287fee730.jpg)
 
 ## Requirements
 
