@@ -3,7 +3,7 @@
 	"id": "absolutecinema",
 	"version": "${version}",
 	"name": "Absolute Cinema Camera",
-	"description": "Turns the game into a film: letterbox bars, hidden HUD, colour grading, depth of field, smoothed camera moves and a director that flies cinematic shots around the scene — following whoever is talking on Simple Voice Chat or playing the scene out in chat. Playtested by Contik, Cmetanochkaa, Gizmons_ and Morda_, whose evening in a tavern is why the camera keeps up with a conversation at all.",
+	"description": "Turns the game into a film: letterbox bars, hidden HUD, colour grading, depth of field, smoothed camera moves and a director that flies cinematic shots around the scene – following whoever is talking on Simple Voice Chat or playing the scene out in chat. Playtested by Contik, Cmetanochkaa, Gizmons_ and Morda_, whose evening in a tavern is why the camera keeps up with a conversation at all.",
 	"authors": [
 		"Glam_Ardor"
 	],
