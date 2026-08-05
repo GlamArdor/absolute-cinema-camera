@@ -21,7 +21,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(Screen.class)
 public abstract class ScreenMixin {
-	@Inject(method = "applyBlur", at = @At("HEAD"), cancellable = true)
+	/*
+	 * Both injections are require = 0 on purpose.
+	 *
+	 * This is decoration: a clear background behind one settings screen. If a future version of the
+	 * game renames or removes either method, the mixin quietly does nothing and the background goes
+	 * back to being blurred — which is a cosmetic regression. The alternative, and the default, is
+	 * that the mixin fails to apply and the game refuses to start. Nothing that only affects how a
+	 * menu looks should ever be able to do that.
+	 */
+	@Inject(method = "applyBlur", at = @At("HEAD"), cancellable = true, require = 0)
 	private void absolutecinema$noBlur(DrawContext context, CallbackInfo ci) {
 		if (SceneDome.isShowing()) {
 			ci.cancel();
@@ -29,7 +38,7 @@ public abstract class ScreenMixin {
 	}
 
 	@Inject(method = "renderDarkening(Lnet/minecraft/client/gui/DrawContext;)V",
-			at = @At("HEAD"), cancellable = true)
+			at = @At("HEAD"), cancellable = true, require = 0)
 	private void absolutecinema$noDarkening(DrawContext context, CallbackInfo ci) {
 		if (SceneDome.isShowing()) {
 			ci.cancel();
