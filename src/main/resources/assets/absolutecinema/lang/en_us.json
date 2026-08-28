@@ -147,7 +147,7 @@
 	"absolutecinema.option.chat_ignore": "Do not react to messages",
 	"absolutecinema.option.chat_ignore.tooltip": "A list of patterns, separated by commas. A message containing any of them does not move the camera.\n\nA star means \"any text\". The pattern ((*)) reads as \"a double bracket, then anything, then a double bracket\" — it catches both ((an aside)) and (( an aside )). It is there by default: double brackets normally mean somebody talking out of character.\n\nA pattern without a star is matched as written: OOC fires on any message where that word appears.\n\nCase does not matter. A match anywhere in the line counts, since the server's prefix and the speaker's name come first.\n\nFor example: ((*)), OOC",
 	"absolutecinema.option.scene_height": "Scene height limit",
-	"absolutecinema.option.scene_height.tooltip": "How far above or below you somebody may be and still count as part of the scene. The radius alone is a sphere, and a sphere in a tavern reaches through the ceiling — the table upstairs joins your conversation and the camera backs off to hold a building. 0 removes the limit.",
+	"absolutecinema.option.scene_height.tooltip": "How far above or below you somebody may be and still count as part of the scene. The radius alone is a sphere, and a sphere in a tavern reaches through the ceiling — the table upstairs joins your conversation and the camera backs off to hold a building. The same limit decides who may take the frame by speaking or writing, so a conversation on the floor below cannot cut the camera away from yours. 0 removes the limit.",
 	"absolutecinema.option.camera_height": "Camera height",
 	"absolutecinema.option.camera_height.tooltip": "Raises or lowers the camera itself without moving what it is aimed at: higher looks down, lower looks up, and people stay in frame either way. Useful for emote mods that seat a character without telling the game — nothing on the client can see through that, so the angle is picked by hand. The camera will not sink into the floor.",
 	"absolutecinema.option.leave_scene": "Leave the scene at",
@@ -171,7 +171,7 @@
 	"absolutecinema.option.speaker_break": "Break after a turn",
 	"absolutecinema.option.speaker_break.tooltip": "How long the camera stays off a speaker who has run out their turn.",
 	"absolutecinema.option.speaker_distance": "Max speaker distance",
-	"absolutecinema.option.speaker_distance.tooltip": "Speakers further away than this are ignored.",
+	"absolutecinema.option.speaker_distance.tooltip": "Speakers further away than this are ignored. The scene height limit applies here too, so this reach is a horizontal one and never picks up another storey.",
 	"absolutecinema.option.rule_of_thirds": "Rule of thirds",
 	"absolutecinema.option.rule_of_thirds.tooltip": "Frames the subject off centre, the way a real shot would."
 }

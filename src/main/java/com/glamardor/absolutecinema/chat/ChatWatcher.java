@@ -89,13 +89,17 @@ public final class ChatWatcher {
 		}
 
 		// Somebody out of sight, or halfway across the map on a global channel, is not in the shot
-		// and cannot be cut to.
+		// and cannot be cut to. Nor is the table downstairs: local chat carries through a floor the
+		// camera cannot, so the scene height limit is asked here as well as in the framing.
 		PlayerEntity player = world.getPlayerByUuid(author);
 		if (player == null || !player.isAlive()) {
 			return;
 		}
 		double reach = config.speakerMaxDistance;
 		if (player.squaredDistanceTo(client.player) > reach * reach) {
+			return;
+		}
+		if (!config.sameLevel(client.player.getY(), player.getY())) {
 			return;
 		}
 

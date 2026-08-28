@@ -271,7 +271,8 @@ public final class CameraDirector {
 				&& (config.mode != CameraMode.DYNAMIC || config.dynamicFollowsSpeaker);
 		UUID speakerId = wantsSpeaker
 				? SpeakerTracker.getCurrentSpeaker(config.speakerHoldSeconds, config.speakerHandoverSeconds,
-						config.maxSpeakerFocusSeconds, config.speakerBreakSeconds)
+						config.maxSpeakerFocusSeconds, config.speakerBreakSeconds,
+						id -> findSpeaker(client, config, id) != null)
 				: null;
 		Entity candidate = speakerId == null ? null : findSpeaker(client, config, speakerId);
 
@@ -804,7 +805,11 @@ public final class CameraDirector {
 			}
 		}
 
-		if (speaker != null && !participants.contains(speaker)) {
+		// A speaker joins the scene from further out than the radius — that reach is deliberately
+		// wider — but never from another storey: the held speaker outlives the cut by a moment, and
+		// somebody walking downstairs mid-sentence would otherwise drag the framing down after them.
+		if (speaker != null && !participants.contains(speaker)
+				&& config.sameLevel(self.getY(), speaker.getY())) {
 			participants.add(speaker);
 		}
 
@@ -882,8 +887,7 @@ public final class CameraDirector {
 		if (other.squaredDistanceTo(self) > radius * radius) {
 			return false;
 		}
-		return config.sceneHeightLimit <= 0.0f
-				|| Math.abs(other.getY() - self.getY()) <= config.sceneHeightLimit;
+		return config.sameLevel(self.getY(), other.getY());
 	}
 
 	/** Distance from the player to whoever else is closest, in blocks. */
@@ -979,6 +983,14 @@ public final class CameraDirector {
 		return Math.min(needed, Math.max(2.0, scene.roomRadius - 0.6));
 	}
 
+	/**
+	 * The player behind a uuid, if they are somebody this camera may cut to.
+	 *
+	 * <p>The reach is a horizontal one. Distance alone is a sphere, and the sphere goes through the
+	 * floor: a table talking downstairs is well inside twenty-four blocks, so the camera would take
+	 * the frame off the scene and hand it to a conversation on another storey. The same height limit
+	 * that decides who belongs to the scene decides who may claim it.
+	 */
 	@Nullable
 	private Entity findSpeaker(MinecraftClient client, CinemaConfig config, UUID speaking) {
 		if (client.world == null || client.player == null) {
@@ -987,7 +999,9 @@ public final class CameraDirector {
 		for (AbstractClientPlayerEntity player : client.world.getPlayers()) {
 			if (player.getUuid().equals(speaking)) {
 				double maxSq = config.speakerMaxDistance * config.speakerMaxDistance;
-				return player.squaredDistanceTo(client.player) <= maxSq ? player : null;
+				boolean reachable = player.squaredDistanceTo(client.player) <= maxSq
+						&& config.sameLevel(client.player.getY(), player.getY());
+				return reachable ? player : null;
 			}
 		}
 		return null;

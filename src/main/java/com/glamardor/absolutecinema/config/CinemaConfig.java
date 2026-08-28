@@ -114,10 +114,27 @@ public class CinemaConfig {
 	/**
 	 * How far above or below you somebody may be and still count as part of the scene, in blocks.
 	 * The scene radius alone is a sphere, and a sphere in a tavern reaches through the ceiling: the
-	 * table upstairs joins your conversation and the camera pulls back to hold a building. Roughly
-	 * one storey by default. 0 removes the limit and gives the plain sphere back.
+	 * table upstairs joins your conversation and the camera pulls back to hold a building. 0 removes
+	 * the limit and gives the plain sphere back.
+	 *
+	 * <p>Three blocks by default, which is one storey and nothing more. Four was a storey plus the
+	 * slack to reach the next one: standing on a first floor, or on any step above the street, it
+	 * let the ground floor back into the scene, and the camera went after a conversation down there
+	 * instead of holding the one in the room. A scene worth filming stands on one floor.
 	 */
-	public float sceneHeightLimit = 4.0f;
+	public float sceneHeightLimit = 3.0f;
+
+	/**
+	 * Whether two people stand on close enough levels to belong to the same scene.
+	 *
+	 * <p>Lives here rather than in the director because the height limit is not only about framing.
+	 * Everything that lets somebody claim the camera — the scene, a voice, a line of chat — has to
+	 * ask the same question, or the limit holds the floor above out of the shot while still letting
+	 * it cut the camera away.
+	 */
+	public boolean sameLevel(double selfY, double otherY) {
+		return sceneHeightLimit <= 0.0f || Math.abs(otherY - selfY) <= sceneHeightLimit;
+	}
 
 	/**
 	 * Raises or lowers every directed frame, in blocks. Emote mods seat and lie people down without
