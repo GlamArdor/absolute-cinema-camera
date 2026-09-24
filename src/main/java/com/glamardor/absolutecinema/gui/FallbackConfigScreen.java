@@ -139,6 +139,10 @@ public class FallbackConfigScreen extends Screen {
 				value -> config.hideNearbyBlockers = value));
 		list.addWidget(blocksSlider("blocker_distance", config.blockerDistance, 0.5f, 5.0f,
 				value -> config.blockerDistance = value));
+		list.addWidget(toggle("fade_players", () -> config.fadeNearbyPlayers,
+				value -> config.fadeNearbyPlayers = value));
+		list.addWidget(blocksSlider("player_fade_distance", config.playerFadeDistance, 0.5f, 8.0f,
+				value -> config.playerFadeDistance = value));
 
 		list.addHeader(Text.translatable("absolutecinema.category.speaker"));
 		list.addWidget(toggle("react_to_chat", () -> config.reactToChat,

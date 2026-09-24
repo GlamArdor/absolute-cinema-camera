@@ -5,6 +5,7 @@ import com.glamardor.absolutecinema.config.CameraMode;
 import com.glamardor.absolutecinema.config.CinemaConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -177,6 +178,36 @@ public final class CinemaManager {
 
 	public static void notifyTripodPlaced() {
 		notifyActionBar(Text.translatable("absolutecinema.msg.tripod_placed"));
+	}
+
+	/**
+	 * Widens or narrows the scene by a block, from a key rather than the settings.
+	 *
+	 * <p>Who is in the scene is the one setting that has to be changed while a scene is running —
+	 * somebody joins the conversation from across the room, somebody at the next table is being
+	 * filmed by mistake — and opening a menu to do it means leaving the scene to fix the scene.
+	 * The dome draws itself for a few seconds after any change of radius, so this also puts the
+	 * picture up: the ring on the floor is the answer to "who is in shot".
+	 */
+	public static void adjustSceneRadius(int blocks) {
+		CinemaConfig config = CinemaConfig.get();
+		float before = config.sceneRadius;
+		config.sceneRadius = MathHelper.clamp(before + blocks, 3.0f, 48.0f);
+		if (config.sceneRadius == before) {
+			return;
+		}
+		config.save();
+		notifyActionBar(Text.translatable("absolutecinema.msg.scene_radius",
+				Math.round(config.sceneRadius)));
+	}
+
+	/** Turns the fading of passers-by on or off without leaving the scene. */
+	public static void toggleFade() {
+		CinemaConfig config = CinemaConfig.get();
+		config.fadeNearbyPlayers = !config.fadeNearbyPlayers;
+		config.save();
+		notifyActionBar(Text.translatable(config.fadeNearbyPlayers
+				? "absolutecinema.msg.fade_on" : "absolutecinema.msg.fade_off"));
 	}
 
 	@Nullable

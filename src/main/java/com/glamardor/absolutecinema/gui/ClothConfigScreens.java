@@ -170,6 +170,10 @@ final class ClothConfigScreens {
 				defaults.hideNearbyBlockers, value -> config.hideNearbyBlockers = value));
 		directed.addEntry(blocks(entries, "blocker_distance", config.blockerDistance, defaults.blockerDistance,
 				value -> config.blockerDistance = value, 1, 5));
+		directed.addEntry(toggle(entries, "fade_players", config.fadeNearbyPlayers,
+				defaults.fadeNearbyPlayers, value -> config.fadeNearbyPlayers = value));
+		directed.addEntry(blocks(entries, "player_fade_distance", config.playerFadeDistance,
+				defaults.playerFadeDistance, value -> config.playerFadeDistance = value, 1, 8));
 
 		ConfigCategory speaker = builder.getOrCreateCategory(Text.translatable("absolutecinema.category.speaker"));
 		speaker.addEntry(seconds(entries, "speaker_hold", config.speakerHoldSeconds, defaults.speakerHoldSeconds,

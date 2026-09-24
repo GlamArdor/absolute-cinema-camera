@@ -112,6 +112,22 @@ public class CinemaConfig {
 	public float blockerDistance = 1.8f;
 
 	/**
+	 * Fade out people who are not in the scene but have wandered in front of the lens.
+	 *
+	 * <p>The camera is pushed out of a body it is standing inside, and it recomposes when the
+	 * scene is hidden for long enough, but neither answers a passer-by who stops half a metre to
+	 * the side of the lens: nothing is blocked badly enough to be worth a cut, and the frame is
+	 * still a shoulder. Cutting for every passer-by on a busy server would be worse than the
+	 * shoulder, so they are faded instead, and only while they are that close.
+	 *
+	 * <p>Participants are never touched, however close they get. Someone in the scene standing in
+	 * front of the camera is a foreground, not a fault.
+	 */
+	public boolean fadeNearbyPlayers = true;
+	/** How close to the lens somebody has to be before they start fading, in blocks. */
+	public float playerFadeDistance = 2.5f;
+
+	/**
 	 * How far above or below you somebody may be and still count as part of the scene, in blocks.
 	 * The scene radius alone is a sphere, and a sphere in a tavern reaches through the ceiling: the
 	 * table upstairs joins your conversation and the camera pulls back to hold a building. 0 removes
@@ -447,6 +463,7 @@ public class CinemaConfig {
 		sceneHeightLimit = clamp(sceneHeightLimit, 0.0f, 32.0f);
 		cameraHeight = clamp(cameraHeight, -2.0f, 2.0f);
 		blockerDistance = clamp(blockerDistance, 0.5f, 5.0f);
+		playerFadeDistance = clamp(playerFadeDistance, 0.5f, 8.0f);
 		speakerHoldSeconds = clamp(speakerHoldSeconds, 0.2f, 15.0f);
 		speakerHandoverSeconds = clamp(speakerHandoverSeconds, 0.0f, 3.0f);
 		minShotSeconds = clamp(minShotSeconds, 0.0f, 5.0f);

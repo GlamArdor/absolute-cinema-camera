@@ -4,6 +4,7 @@ import com.glamardor.absolutecinema.AbsoluteCinema;
 import com.glamardor.absolutecinema.CinemaManager;
 import com.glamardor.absolutecinema.config.CameraMode;
 import com.glamardor.absolutecinema.config.CinemaConfig;
+import com.glamardor.absolutecinema.render.PlayerFade;
 import com.glamardor.absolutecinema.voice.SpeakerTracker;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -18,9 +19,11 @@ import net.minecraft.world.RaycastContext;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -58,6 +61,13 @@ public final class CameraDirector {
 
 	/** How close the lens may come to anybody, horizontally, before it is pushed back out. */
 	private static final double PERSON_RADIUS = 0.55;
+
+	/**
+	 * How long the scene may stay hidden behind other people before the shot is recomposed, in
+	 * seconds. Three times what a wall is given: a wall will still be there next frame, and the
+	 * back of somebody crossing the room will not.
+	 */
+	private static final float CROWD_PATIENCE = 3.0f;
 
 	/** The camera never goes below this much above the ground under it. */
 	private static final double FLOOR_CLEARANCE = 0.35;
@@ -149,6 +159,8 @@ public final class CameraDirector {
 
 	/** How long the current shot has had most of the scene hidden behind something. */
 	private float blindFor;
+	/** The same, counted separately for scenes hidden behind people rather than behind the world. */
+	private float crowdedFor;
 	private float lastVisibilityProbe = -10.0f;
 
 	/** Clear distance in each of the eight probe directions — lets shots pick the open side. */
@@ -183,6 +195,13 @@ public final class CameraDirector {
 	@Nullable
 	private Entity dialogueSubject;
 
+	/**
+	 * Everybody the last collected scene had in it. Kept as ids rather than entities so a scene
+	 * that ended cannot hold a reference to a player who has since unloaded, and read from the
+	 * render thread to tell a participant from a passer-by.
+	 */
+	private final Set<UUID> participantIds = new HashSet<>();
+
 	/** True while the player has walked away from everybody else, and a cut is owed for it. */
 	private boolean leashed;
 	private boolean leashCutPending;
@@ -210,6 +229,8 @@ public final class CameraDirector {
 		clampOrigin = null;
 		crampedFor = 0.0f;
 		blindFor = 0.0f;
+		crowdedFor = 0.0f;
+		participantIds.clear();
 		tripodPos = null;
 		lastSideSwap = -100.0f;
 		hasTrackedFacing = false;
@@ -342,14 +363,18 @@ public final class CameraDirector {
 		// A shot that has spent a second and a half jammed against a wall — or one that has been
 		// looking at the back of a pillar while the scene happens behind it — is not going to get
 		// better. Pick a different angle instead of sitting there.
-		boolean stuck = crampedFor > 1.5f || blindFor > 1.0f || leashCut;
+		boolean stuck = crampedFor > 1.5f || blindFor > 1.0f || crowdedFor > CROWD_PATIENCE || leashCut;
 		if (stuck) {
 			if (DEBUG) {
-				AbsoluteCinema.LOGGER.info("[camera] recomposing: {}",
-						blindFor > 1.0f ? "the scene was out of sight" : "shot was stuck against geometry");
+				AbsoluteCinema.LOGGER.info("[camera] recomposing: {}", blindFor > 1.0f
+						? "the scene was out of sight"
+						: crowdedFor > CROWD_PATIENCE
+								? "the scene was behind a crowd"
+								: "shot was stuck against geometry");
 			}
 			crampedFor = 0.0f;
 			blindFor = 0.0f;
+			crowdedFor = 0.0f;
 		}
 
 		// Held frames: while nobody has the floor, the shot stands until it is asked to change.
@@ -386,7 +411,9 @@ public final class CameraDirector {
 		lastVisibilityProbe = clock;
 
 		int visible = 0;
+		int behindPeople = 0;
 		int total = 0;
+		List<Box> bodies = bystanderBodies(client);
 		// Heads only, and at most a handful of them: this runs while the camera is flying.
 		for (int i = 1; i < scene.points.size() && total < 8; i += 2) {
 			Vec3d head = scene.points.get(i);
@@ -398,18 +425,80 @@ public final class CameraDirector {
 			total++;
 			HitResult hit = client.world.raycast(new RaycastContext(pos, head,
 					RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player));
-			if (hit.getType() != HitResult.Type.BLOCK) {
-				visible++;
+			if (hit.getType() == HitResult.Type.BLOCK) {
+				continue;
 			}
+			if (blockedByBody(bodies, pos, head)) {
+				behindPeople++;
+				continue;
+			}
+			visible++;
 		}
 		if (total == 0) {
 			return;
 		}
-		if (visible * 2 < total) {
+		// Counted apart, and deliberately: the world's own blindness keeps the timing it always
+		// had, because a wall that has been in the way for a second will be in the way for the
+		// next one too. Rolling people into the same count would have a passer-by costing a shot
+		// as fast as a pillar does.
+		int clearOfBlocks = visible + behindPeople;
+		if (clearOfBlocks * 2 < total) {
 			blindFor += 0.3f;
 		} else {
 			blindFor = 0.0f;
 		}
+		// People are given far longer. A crowd moves, and recomposing for every passer-by would
+		// cut the scene to pieces on a busy evening. This is for the case the fading cannot
+		// answer — a wall of backs several metres out, too far from the lens to be faded and
+		// squarely in the way.
+		if (visible * 2 < total && clearOfBlocks * 2 >= total) {
+			crowdedFor += 0.3f;
+		} else {
+			crowdedFor = 0.0f;
+		}
+	}
+
+	/**
+	 * The bodies of everyone nearby who is not in the scene, as boxes to be tested against.
+	 *
+	 * <p>Anybody already faded out for standing in the lens is left out: they are not blocking
+	 * anything any more, and counting them would have the two answers to a blocked frame fighting
+	 * each other — the picture cleared by the fade, the camera cutting away as if it had not been.
+	 */
+	private List<Box> bystanderBodies(MinecraftClient client) {
+		if (client.world == null) {
+			return List.of();
+		}
+		List<Box> bodies = new ArrayList<>();
+		for (AbstractClientPlayerEntity person : client.world.getPlayers()) {
+			if (person.isSpectator() || person == client.player || isParticipant(person)) {
+				continue;
+			}
+			if (person.squaredDistanceTo(pos.x, pos.y, pos.z) > 400.0) {
+				continue;
+			}
+			if (PlayerFade.hidden(person)) {
+				continue;
+			}
+			// Narrowed: a shoulder clipping the very edge of the ray is not a blocked face, and
+			// the full box is wider than the body inside it.
+			bodies.add(person.getBoundingBox().expand(-0.12, 0.0, -0.12));
+		}
+		return bodies;
+	}
+
+	private static boolean blockedByBody(List<Box> bodies, Vec3d from, Vec3d to) {
+		for (Box body : bodies) {
+			if (body.raycast(from, to).isPresent()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Whether somebody is part of the scene the camera is filming this frame. */
+	public boolean isParticipant(@Nullable Entity entity) {
+		return entity != null && participantIds.contains(entity.getUuid());
 	}
 
 	/** Wall clamping, blending and the follow damping — shared by every mode. */
@@ -830,6 +919,11 @@ public final class CameraDirector {
 				AbsoluteCinema.LOGGER.info("[camera] {}", alone
 						? "left the scene — the camera comes along" : "back with the others");
 			}
+		}
+
+		participantIds.clear();
+		for (Entity entity : participants) {
+			participantIds.add(entity.getUuid());
 		}
 
 		double x = 0.0;

@@ -8,6 +8,8 @@
 		"EntityRenderDispatcherMixin",
 		"GameRendererMixin",
 		"InGameHudMixin",
+		"LivingEntityRendererMixin",
+		"PlayerEntityRendererMixin",
 		"ScreenMixin"
 	],
 	"injectors": {

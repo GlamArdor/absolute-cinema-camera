@@ -32,6 +32,9 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 	public static KeyBinding profileKey;
 	public static KeyBinding tripodKey;
 	public static KeyBinding shotKey;
+	public static KeyBinding radiusUpKey;
+	public static KeyBinding radiusDownKey;
+	public static KeyBinding fadeKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -48,6 +51,12 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 		// Next to the other two, and the one an operator reaches for most once the shots are held
 		// rather than timed.
 		shotKey = register("shot", GLFW.GLFW_KEY_F9);
+		// Unbound by default, like every other second-rank key here: these are for people who film
+		// often enough to want the scene resized mid-dialogue, and a default binding of ours would
+		// be one more key taken from somebody who never uses them.
+		radiusUpKey = register("radius_up", GLFW.GLFW_KEY_UNKNOWN);
+		radiusDownKey = register("radius_down", GLFW.GLFW_KEY_UNKNOWN);
+		fadeKey = register("fade", GLFW.GLFW_KEY_UNKNOWN);
 
 		ClientTickEvents.END_CLIENT_TICK.register(AbsoluteCinemaClient::onTick);
 		CinemaCommands.register();
@@ -114,6 +123,15 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 		}
 		while (shotKey.wasPressed()) {
 			CameraDirector.get().requestNewShot();
+		}
+		while (radiusUpKey.wasPressed()) {
+			CinemaManager.adjustSceneRadius(1);
+		}
+		while (radiusDownKey.wasPressed()) {
+			CinemaManager.adjustSceneRadius(-1);
+		}
+		while (fadeKey.wasPressed()) {
+			CinemaManager.toggleFade();
 		}
 		while (settingsKey.wasPressed()) {
 			client.setScreen(ConfigScreenFactory.create(null));

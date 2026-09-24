@@ -133,6 +133,13 @@ a shot of nothing is dropped for a better angle. Signs, item frames and other cl
 collision cannot be pushed away from the lens, so anything that ends up right in front of it is
 simply not drawn.
 
+People in the way are a different problem, because a camera cannot ask them to move and cutting
+away every time somebody walks past would leave nothing of the scene. Anybody who is not part of
+it and comes close to the lens fades out instead, all the way to nothing against the glass, and
+comes back as they step away. Participants never fade, however close they stand – one of them in
+the foreground is a shot, not a fault. Only a crowd that stays in the way long enough for the
+fade not to be the answer costs the shot its angle.
+
 **Roleplay played out in text.** Half of every scene on a roleplay server is typed rather than
 spoken – a `/me`, a `/do`, a line of dialogue – and a camera that only listens for voices spends
 that half filming the wrong person. So a message counts as a turn too, and the camera cuts to
@@ -175,10 +182,13 @@ for everybody watching.
 | `F7` | Toggle cinema mode |
 | unbound | Open the settings screen |
 | unbound | Next camera mode |
-| unbound | Next colour grade |
+| `F8` | Next colour grade |
 | unbound | Next scene profile |
 | unbound | Plant the tripod here |
 | `F9` | Change the angle |
+| unbound | Widen the scene, a block at a time |
+| unbound | Narrow the scene |
+| unbound | Fade passers-by out of the lens |
 
 All of them are rebindable in the vanilla controls screen, under *Absolute Cinema Camera*.
 

@@ -5,6 +5,7 @@ import com.glamardor.absolutecinema.config.CinemaConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.util.math.Vec3d;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Clears the lens.
@@ -41,29 +42,49 @@ public final class LensClearing {
 		if (!config.hideNearbyBlockers || !config.mode.isDirected()) {
 			return false;
 		}
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.gameRenderer == null) {
-			return false;
-		}
-		Camera camera = client.gameRenderer.getCamera();
-		if (camera == null || !camera.isReady()) {
-			return false;
+		return inTheWay(point, config.blockerDistance) > 0.0f;
+	}
+
+	/**
+	 * How far into the lens something sitting at this point has come: 0 when it is not in the way
+	 * at all, 1 when it is on the glass.
+	 *
+	 * <p>The clutter hiding only needs to know whether this is above zero. The people fading needs
+	 * the number itself, because a person is not switched off the moment they qualify — they are
+	 * faded by however much of the way in they are.
+	 */
+	public static float inTheWay(Vec3d point, double radius) {
+		Camera camera = camera();
+		if (camera == null || radius <= 0.0) {
+			return 0.0f;
 		}
 
 		Vec3d delta = point.subtract(camera.getPos());
 		double distanceSquared = delta.lengthSquared();
-		double radius = config.blockerDistance;
 		if (distanceSquared > radius * radius) {
-			return false;
+			return 0.0f;
 		}
 		if (distanceSquared < 1.0E-6) {
-			return true;
+			return 1.0f;
 		}
 		Vec3d forward = Vec3d.fromPolar(camera.getPitch(), camera.getYaw());
 		// Widens as it gets closer: at the edge of the radius the lens has to be pointed at it, on
 		// the lens itself anything short of directly behind counts.
 		double nearness = 1.0 - Math.sqrt(distanceSquared) / radius;
 		double threshold = IN_FRONT_FAR + (IN_FRONT_NEAR - IN_FRONT_FAR) * nearness;
-		return delta.normalize().dotProduct(forward) > threshold;
+		if (delta.normalize().dotProduct(forward) <= threshold) {
+			return 0.0f;
+		}
+		return (float) nearness;
+	}
+
+	@Nullable
+	public static Camera camera() {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client.gameRenderer == null) {
+			return null;
+		}
+		Camera camera = client.gameRenderer.getCamera();
+		return camera != null && camera.isReady() ? camera : null;
 	}
 }
