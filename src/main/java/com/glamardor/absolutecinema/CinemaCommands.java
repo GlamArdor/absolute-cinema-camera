@@ -14,7 +14,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
-/** /cinema — everything the keybinds do, plus the scene profiles and the tripod. */
+/** /cinema – everything the keybinds do, plus the scene profiles and the tripod. */
 public final class CinemaCommands {
 	private CinemaCommands() {
 	}

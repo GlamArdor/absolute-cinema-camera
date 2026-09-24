@@ -31,7 +31,7 @@ import java.util.UUID;
  *
  * <p>The camera films a <em>scene</em>, not a player: everyone standing together is collected
  * into a group, and shots are composed around that group at a distance wide enough to hold all
- * of it. Only one thing ever pulls the camera in close — someone actually speaking, in the
+ * of it. Only one thing ever pulls the camera in close – someone actually speaking, in the
  * speaker focus mode.
  *
  * <p>Shots are described relative to the group (an angle around it, a distance factor, a height)
@@ -50,13 +50,13 @@ public final class CameraDirector {
 	/** Furthest the room probe looks; also the "we are outdoors" answer. */
 	private static final double MAX_ROOM_RADIUS = 16.0;
 
-	/** A shot squeezed to less than this share of its distance has nowhere to go — recompose. */
+	/** A shot squeezed to less than this share of its distance has nowhere to go – recompose. */
 	private static final double CRAMPED_RATIO = 0.45;
 
 	/** Below this average clear radius the room is treated as too small for travelling shots. */
 	private static final double TIGHT_ROOM_RADIUS = 3.2;
 
-	/** Closer than this to the subject and the camera is inside them — abandon the shot fast. */
+	/** Closer than this to the subject and the camera is inside them – abandon the shot fast. */
 	private static final double PERSONAL_SPACE = 1.15;
 
 	/** How close the lens may come to anybody, horizontally, before it is pushed back out. */
@@ -87,7 +87,7 @@ public final class CameraDirector {
 	private static final double MASTER_AZIMUTH = 26.0;
 	private static final double SPEAKER_AZIMUTH = 34.0;
 
-	/** How far a cut-in drifts in, and over how long. Subtle on purpose — it should not be noticed. */
+	/** How far a cut-in drifts in, and over how long. Subtle on purpose – it should not be noticed. */
 	private static final float PUSH_SECONDS = 5.0f;
 	private static final double PUSH_RATIO = 0.76;
 
@@ -106,7 +106,7 @@ public final class CameraDirector {
 	 * How the frame follows the way people are facing.
 	 *
 	 * <p>A shot is built around an angle, and that angle used to be read off the subject's own
-	 * yaw every frame — so the person being filmed was steering the camera with their mouse, for
+	 * yaw every frame – so the person being filmed was steering the camera with their mouse, for
 	 * everybody watching. Now the angle belongs to the shot: it is fixed when the shot is
 	 * composed, ignores anything smaller than the dead zone, and past that turns no faster than
 	 * the rate below. Someone glancing around no longer moves the camera at all; someone turning
@@ -163,7 +163,7 @@ public final class CameraDirector {
 	private float crowdedFor;
 	private float lastVisibilityProbe = -10.0f;
 
-	/** Clear distance in each of the eight probe directions — lets shots pick the open side. */
+	/** Clear distance in each of the eight probe directions – lets shots pick the open side. */
 	private final double[] dirClearances = new double[8];
 
 	/** Set when the wall clamp had to bring the camera inside the subject's personal space. */
@@ -245,7 +245,7 @@ public final class CameraDirector {
 	}
 
 	/**
-	 * Compose a different frame, now — the manual version of what the timer usually does.
+	 * Compose a different frame, now – the manual version of what the timer usually does.
 	 *
 	 * <p>Answered on the next frame rather than here, so it lands in the same place every other
 	 * reason for a cut does and cannot half-change a shot that is being evaluated.
@@ -258,7 +258,7 @@ public final class CameraDirector {
 		return pos;
 	}
 
-	/** The point the current shot is aimed at — also what the depth of field focuses on. */
+	/** The point the current shot is aimed at – also what the depth of field focuses on. */
 	public Vec3d getLook() {
 		return look;
 	}
@@ -351,7 +351,7 @@ public final class CameraDirector {
 					probeVisibility(client, scene);
 					return true;
 				}
-				// Nobody to film — fall through to the ordinary coverage.
+				// Nobody to film – fall through to the ordinary coverage.
 			}
 			default -> {
 			}
@@ -360,8 +360,8 @@ public final class CameraDirector {
 		float speed = Math.max(0.05f, config.shotSpeed);
 		shotElapsed += dt * speed;
 
-		// A shot that has spent a second and a half jammed against a wall — or one that has been
-		// looking at the back of a pillar while the scene happens behind it — is not going to get
+		// A shot that has spent a second and a half jammed against a wall – or one that has been
+		// looking at the back of a pillar while the scene happens behind it – is not going to get
 		// better. Pick a different angle instead of sitting there.
 		boolean stuck = crampedFor > 1.5f || blindFor > 1.0f || crowdedFor > CROWD_PATIENCE || leashCut;
 		if (stuck) {
@@ -378,7 +378,7 @@ public final class CameraDirector {
 		}
 
 		// Held frames: while nobody has the floor, the shot stands until it is asked to change.
-		// A speaker still takes the frame the moment they speak — that is what the mode is for, and
+		// A speaker still takes the frame the moment they speak – that is what the mode is for, and
 		// no key can be quicker than the voice itself.
 		boolean onTimer = !(config.manualShotChanges && speaker == null);
 		boolean timeUp = shot != null && onTimer && shotElapsed >= shot.duration;
@@ -400,7 +400,7 @@ public final class CameraDirector {
 
 	/**
 	 * Is the scene actually on screen? Framing maths only knows where people are, not what is
-	 * standing between them and the lens — a pillar, a doorway or a staircase can leave a
+	 * standing between them and the lens – a pillar, a doorway or a staircase can leave a
 	 * perfectly composed shot of nothing at all. A few rays a second are enough to notice, and
 	 * noticing is all it takes: the shot is then recomposed from somewhere else.
 	 */
@@ -449,7 +449,7 @@ public final class CameraDirector {
 		}
 		// People are given far longer. A crowd moves, and recomposing for every passer-by would
 		// cut the scene to pieces on a busy evening. This is for the case the fading cannot
-		// answer — a wall of backs several metres out, too far from the lens to be faded and
+		// answer – a wall of backs several metres out, too far from the lens to be faded and
 		// squarely in the way.
 		if (visible * 2 < total && clearOfBlocks * 2 >= total) {
 			crowdedFor += 0.3f;
@@ -463,7 +463,7 @@ public final class CameraDirector {
 	 *
 	 * <p>Anybody already faded out for standing in the lens is left out: they are not blocking
 	 * anything any more, and counting them would have the two answers to a blocked frame fighting
-	 * each other — the picture cleared by the fade, the camera cutting away as if it had not been.
+	 * each other – the picture cleared by the fade, the camera cutting away as if it had not been.
 	 */
 	private List<Box> bystanderBodies(MinecraftClient client) {
 		if (client.world == null) {
@@ -501,7 +501,7 @@ public final class CameraDirector {
 		return entity != null && participantIds.contains(entity.getUuid());
 	}
 
-	/** Wall clamping, blending and the follow damping — shared by every mode. */
+	/** Wall clamping, blending and the follow damping – shared by every mode. */
 	private void applyPose(MinecraftClient client, CinemaConfig config, float dt, Pose target) {
 		if (config.cameraHeight != 0.0f) {
 			// The camera moves; what it is aimed at does not. That is what a tripod leg does, and
@@ -515,7 +515,7 @@ public final class CameraDirector {
 		}
 
 		if (config.avoidWalls && client.world != null && client.player != null) {
-			// Cast from the subject itself, not from the rule-of-thirds-shifted look point — in a
+			// Cast from the subject itself, not from the rule-of-thirds-shifted look point – in a
 			// tight room that shifted point can sit inside the wall and break the whole test.
 			Vec3d origin = clampOrigin != null ? clampOrigin : target.look;
 			target = new Pose(clampAgainstWalls(client.world, client.player, origin, target.pos), target.look);
@@ -578,7 +578,7 @@ public final class CameraDirector {
 	 * <p>The wall clamp only knows about blocks, and a shot composed a metre and a half from one
 	 * face regularly lands inside the head of somebody standing between. From inside a head you see
 	 * the inside of a skin and nothing else, so the frame is simply gone. Anyone the camera is
-	 * within arm's length of pushes it back out horizontally — the shortest way out, which keeps
+	 * within arm's length of pushes it back out horizontally – the shortest way out, which keeps
 	 * the height and therefore the composition.
 	 */
 	private Vec3d pushOutOfPeople(MinecraftClient client, Vec3d anchor, Vec3d look) {
@@ -635,7 +635,7 @@ public final class CameraDirector {
 		return new Pose(tripodPos, scene.center.add(0.0, scene.eyeHeight - 0.15, 0.0));
 	}
 
-	/** Moves the tripod to a new spot — bound to the command and the keybind. */
+	/** Moves the tripod to a new spot – bound to the command and the keybind. */
 	public void placeTripod(Vec3d position) {
 		tripodPos = position;
 		hasPose = false;
@@ -689,7 +689,7 @@ public final class CameraDirector {
 	}
 
 	// ---------------------------------------------------------------------------------------
-	// Dialogue — a master shot, and a cut to whoever is speaking
+	// Dialogue – a master shot, and a cut to whoever is speaking
 	// ---------------------------------------------------------------------------------------
 
 	/**
@@ -697,7 +697,7 @@ public final class CameraDirector {
 	 * in a master shot, and cut in to whoever starts speaking. When they stop, cut back out.
 	 *
 	 * <p>This replaced a strict two-person shot-reverse-shot. Two things were wrong with it on a
-	 * roleplay server. A conversation there is rarely two people — a table of five is normal, and
+	 * roleplay server. A conversation there is rarely two people – a table of five is normal, and
 	 * everyone not in the pair simply vanished from the film. And the reaction cut-aways, which
 	 * are what makes the technique work on a film set with a script, here landed on whoever
 	 * happened to be nearby, at moments that had nothing to do with the scene.
@@ -751,7 +751,7 @@ public final class CameraDirector {
 	/**
 	 * Decides whether this change of frame is a cut or a reframe.
 	 *
-	 * <p>A cut is right when the angle really changes — that is what reads as a new shot, and it
+	 * <p>A cut is right when the angle really changes – that is what reads as a new shot, and it
 	 * arrives instantly, which matters when a reply lasts a second and a half. But when the next
 	 * speaker is standing beside the last one, the "cut" is a swing of fifteen degrees, and an
 	 * instant jump of fifteen degrees does not read as a new shot at all: it reads as the picture
@@ -770,7 +770,7 @@ public final class CameraDirector {
 		}
 		// The angle alone is misleading up close. Two people at the same table are barely a block
 		// apart, but the camera stands a block and a half away, so moving from one face to the
-		// other swings it through fifty degrees — an angle that reads as a cut when the camera is
+		// other swings it through fifty degrees – an angle that reads as a cut when the camera is
 		// across the room, and as a twitch when it is this near. What actually decides how a change
 		// of frame reads is how far the camera travels, so a short move is a pan whatever the angle.
 		double travel = flatten(next.pos().subtract(pos)).length();
@@ -820,7 +820,7 @@ public final class CameraDirector {
 	 * In on one face, angled off their own gaze, on the same side of the room as the master.
 	 *
 	 * <p>The shot pushes in slowly while it lasts. A locked close-up is a photograph; the drift
-	 * inwards is what a real close-up does, and it also softens the cut that got us here — the
+	 * inwards is what a real close-up does, and it also softens the cut that got us here – the
 	 * frame is already moving when it arrives.
 	 */
 	private Pose dialogueSpeakerPose(Scene scene, Entity speaker, CinemaConfig config) {
@@ -894,8 +894,8 @@ public final class CameraDirector {
 			}
 		}
 
-		// A speaker joins the scene from further out than the radius — that reach is deliberately
-		// wider — but never from another storey: the held speaker outlives the cut by a moment, and
+		// A speaker joins the scene from further out than the radius – that reach is deliberately
+		// wider – but never from another storey: the held speaker outlives the cut by a moment, and
 		// somebody walking downstairs mid-sentence would otherwise drag the framing down after them.
 		if (speaker != null && !participants.contains(speaker)
 				&& config.sameLevel(self.getY(), speaker.getY())) {
@@ -903,7 +903,7 @@ public final class CameraDirector {
 		}
 
 		// The camera belongs to whoever switched it on. Walk far enough away from everybody else
-		// and you have left the scene, whatever the scene radius says — so the camera leaves with
+		// and you have left the scene, whatever the scene radius says – so the camera leaves with
 		// you rather than staying behind to film a conversation you are no longer in.
 		boolean alone = config.leaveSceneDistance > 0.0f && participants.size() > 1
 				&& nearestOther(self, participants, tickProgress) > config.leaveSceneDistance;
@@ -917,7 +917,7 @@ public final class CameraDirector {
 			leashCutPending = true;
 			if (DEBUG) {
 				AbsoluteCinema.LOGGER.info("[camera] {}", alone
-						? "left the scene — the camera comes along" : "back with the others");
+						? "left the scene – the camera comes along" : "back with the others");
 			}
 		}
 
@@ -949,7 +949,7 @@ public final class CameraDirector {
 		double faceYaw = Math.atan2(sinYaw, cosYaw);
 
 		double spread = 0.0;
-		// Two points per person — the feet and the top of the head — are what the framing test
+		// Two points per person – the feet and the top of the head – are what the framing test
 		// has to keep on screen. Sampling the centre only is how people ended up cut in half.
 		List<Vec3d> points = new ArrayList<>(participants.size() * 2);
 		for (Entity entity : participants) {
@@ -966,14 +966,14 @@ public final class CameraDirector {
 	}
 
 	/**
-	 * Whether somebody counts as part of the scene: inside the radius, and — unless the limit is
-	 * switched off — on roughly the same level. Without the height test the radius is a sphere, and
+	 * Whether somebody counts as part of the scene: inside the radius, and – unless the limit is
+	 * switched off – on roughly the same level. Without the height test the radius is a sphere, and
 	 * a sphere in a tavern reaches through the floor above: the camera ends up pulling back to hold
 	 * two conversations that cannot see each other.
 	 *
 	 * <p>The test is the plain one, taken fresh every frame. A version that held somebody in the
 	 * scene for a couple of seconds after they stepped outside the radius was tried and taken back
-	 * out: what it fixed — a member flickering at the boundary — was less noticeable than what it
+	 * out: what it fixed – a member flickering at the boundary – was less noticeable than what it
 	 * cost, which was the camera hanging on to a scene the player had already walked away from.
 	 */
 	private static boolean inScene(Entity self, Entity other, CinemaConfig config) {
@@ -1027,7 +1027,7 @@ public final class CameraDirector {
 	 * Clear distance towards a shot azimuth, interpolated between the eight probes.
 	 *
 	 * <p>The probes are indexed by world angle in the XZ plane, while a shot azimuth builds its
-	 * offset as (-sin, cos) — hence the quarter turn between the two.
+	 * offset as (-sin, cos) – hence the quarter turn between the two.
 	 */
 	private double clearanceTowards(double worldAngle) {
 		double probeAngle = worldAngle + Math.PI / 2.0;
@@ -1068,7 +1068,7 @@ public final class CameraDirector {
 	}
 
 	/**
-	 * How far back the camera has to sit to hold the whole group — and no further. The shot
+	 * How far back the camera has to sit to hold the whole group – and no further. The shot
 	 * distance from the config is the baseline for a single person; a spread-out group pushes it
 	 * out just enough to fit, and the room the scene is standing in caps it.
 	 */
@@ -1265,7 +1265,7 @@ public final class CameraDirector {
 		s.startAzimuth = limitAzimuth(s.startAzimuth, FRONT_ARC);
 		s.endAzimuth = limitAzimuth(s.endAzimuth, FRONT_ARC);
 		if (Math.abs(s.endAzimuth - s.startAzimuth) < 6.0 * DEG && s.type == ShotType.ORBIT) {
-			// The clamp flattened the arc — swing it back towards the front instead.
+			// The clamp flattened the arc – swing it back towards the front instead.
 			s.endAzimuth = s.startAzimuth - Math.signum(s.startAzimuth) * 40.0 * DEG;
 		}
 
@@ -1283,11 +1283,11 @@ public final class CameraDirector {
 
 		ShotType[] pool;
 		if (tight && !framingSpeaker) {
-			// A 3x3 room has no floor space for travelling shots — everything that is left is
+			// A 3x3 room has no floor space for travelling shots – everything that is left is
 			// looking down from a corner of the ceiling.
 			pool = new ShotType[] { ShotType.CRANE_DOWN, ShotType.STATIC_DRIFT, ShotType.ORBIT };
 		} else if (framingSpeaker) {
-			// Someone is talking: stay on their face. No over-the-shoulder here — it would frame
+			// Someone is talking: stay on their face. No over-the-shoulder here – it would frame
 			// the back of the speaker's head.
 			pool = new ShotType[] { ShotType.CLOSE_UP, ShotType.CLOSE_UP, ShotType.DOLLY_IN,
 					ShotType.ORBIT, ShotType.TRACKING };
@@ -1382,8 +1382,8 @@ public final class CameraDirector {
 	 * <p>The old framing only knew how far apart people were standing, which says nothing about
 	 * how much of the lens they take up: three people spread across the lens need a very
 	 * different distance depending on whether the camera is looking along the line they form or
-	 * across it. This measures the real thing — each person's offset from the axis of the shot,
-	 * against the actual field of view — and moves back by exactly what is missing.
+	 * across it. This measures the real thing – each person's offset from the axis of the shot,
+	 * against the actual field of view – and moves back by exactly what is missing.
 	 *
 	 * <p>The letterbox is part of the sum: the mattes eat the top and bottom of the frame, so the
 	 * usable vertical angle is smaller than the game's field of view by however tall the bars are.
@@ -1466,7 +1466,7 @@ public final class CameraDirector {
 	/**
 	 * Keeps the camera inside the room: it may not end up behind a wall, inside one, or so close
 	 * to a surface that the near plane cuts through it. Same idea as vanilla's third-person
-	 * clipping, but with the corners of the near plane checked too — a single centre ray lets the
+	 * clipping, but with the corners of the near plane checked too – a single centre ray lets the
 	 * lens poke through wall edges.
 	 */
 	private Vec3d clampAgainstWalls(ClientWorld world, Entity viewer, Vec3d from, Vec3d to) {
@@ -1495,7 +1495,7 @@ public final class CameraDirector {
 			}
 		}
 
-		// Whatever little room the wall leaves is all we get — forcing a minimum distance here
+		// Whatever little room the wall leaves is all we get – forcing a minimum distance here
 		// is exactly what used to shove the camera through the wall of a tight room. If the
 		// resulting frame is unusably close, the cramped-shot logic recomposes instead.
 		allowed = MathHelper.clamp(allowed, 0.25, length);

@@ -87,7 +87,7 @@ public class AbsoluteCinemaClient implements ClientModInitializer {
 					}
 				});
 
-		AbsoluteCinema.LOGGER.info("{} ready — voice chat {}", AbsoluteCinema.MOD_NAME,
+		AbsoluteCinema.LOGGER.info("{} ready – voice chat {}", AbsoluteCinema.MOD_NAME,
 				SpeakerTracker.isVoiceChatInstalled() ? "detected" : "not installed");
 	}
 

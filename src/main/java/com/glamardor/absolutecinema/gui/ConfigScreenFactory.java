@@ -30,7 +30,7 @@ public final class ConfigScreenFactory {
 			}
 		}
 		// The built-in screen writes straight into the config as things are dragged, so it needs
-		// no preview machinery — only the dome, so the scene radius can be set by looking at it.
+		// no preview machinery – only the dome, so the scene radius can be set by looking at it.
 		Screen screen = new FallbackConfigScreen(parent);
 		SceneDome.arm(screen);
 		return screen;

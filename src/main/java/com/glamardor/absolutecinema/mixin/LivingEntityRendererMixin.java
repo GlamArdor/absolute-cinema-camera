@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * Fades out whoever is standing in the lens.
  *
  * <p>Everything the fade needs to know is about the entity, and by the time a frame is being drawn
- * the renderer has only a render state to go on — so the reading is taken where the state is
+ * the renderer has only a render state to go on – so the reading is taken where the state is
  * filled in and carried along on it. From there the body is moved onto a translucent layer and
  * given the alpha to match.
  *
@@ -72,7 +72,7 @@ public abstract class LivingEntityRendererMixin {
 
 	/**
 	 * Armour, held items and the cape come off with the fade. They are drawn by feature renderers
-	 * on layers of their own, most of them cutout layers that do not blend at all — faded, they
+	 * on layers of their own, most of them cutout layers that do not blend at all – faded, they
 	 * would hang in the air as a solid suit around a ghost.
 	 */
 	@Inject(method = "shouldRenderFeatures(Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;)Z",

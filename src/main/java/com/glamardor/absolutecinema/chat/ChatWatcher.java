@@ -20,21 +20,21 @@ import java.util.UUID;
 /**
  * Turns what people write into something the camera can point at.
  *
- * <p>On a roleplay server a good half of every scene is played out in text — <code>/me</code>,
- * <code>/do</code>, an ordinary line of dialogue — and a camera that only listens for voices spends
+ * <p>On a roleplay server a good half of every scene is played out in text – <code>/me</code>,
+ * <code>/do</code>, an ordinary line of dialogue – and a camera that only listens for voices spends
  * that half filming whoever spoke last, or nobody at all.
  *
  * <p>Finding the author is the whole problem, and it has two answers. Genuine player chat carries
  * the sender's uuid in the packet, so the client already knows. Anything a plugin has reformatted
  * arrives as a system message instead: a piece of text, with no author attached to it anywhere.
  * What saves us there is that servers habitually attach a <code>show_entity</code> hover to the
- * name — the tooltip you get pointing at somebody's message — and that hover is, by its own
+ * name – the tooltip you get pointing at somebody's message – and that hover is, by its own
  * definition, an entity type and a uuid. So the author is read out of the decoration the server
  * was already sending, with nothing asked of the server at all.
  *
  * <p>A message is not speech, and is not treated as it. Speech is a duration: it keeps arriving and
- * the camera holds while it does. A message is an instant with a reading time attached — a short
- * reply is worth a couple of seconds, a long emote is worth reading through — and a live voice
+ * the camera holds while it does. A message is an instant with a reading time attached – a short
+ * reply is worth a couple of seconds, a long emote is worth reading through – and a live voice
  * always outranks it.
  */
 public final class ChatWatcher {
@@ -44,7 +44,7 @@ public final class ChatWatcher {
 	public static void register() {
 		ClientReceiveMessageEvents.CHAT.register((message, signed, sender, params, timestamp) ->
 				handle(message, authorOf(sender, signed)));
-		// Overlay messages are the action bar, not chat — nobody plays a scene up there.
+		// Overlay messages are the action bar, not chat – nobody plays a scene up there.
 		ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
 			if (!overlay) {
 				handle(message, null);
@@ -126,7 +126,7 @@ public final class ChatWatcher {
 	 * <p>A marker matches when it appears anywhere in the line, and a <code>*</code> inside it
 	 * stands for any run of text. That second part is what makes the setting usable: an
 	 * out-of-character aside is written <code>((like this))</code>, and the useful rule is "any
-	 * line with double brackets round part of it" — <code>((*))</code> — not the literal characters
+	 * line with double brackets round part of it" – <code>((*))</code> – not the literal characters
 	 * <code>(())</code>, which never occur in a real message.
 	 */
 	private static boolean ignored(String plain, CinemaConfig config) {
@@ -177,7 +177,7 @@ public final class ChatWatcher {
 	 * <p>Also used by the chat probe, so a dump always reports exactly what the camera would do.
 	 *
 	 * <p>A message with no tag has no author here, and deliberately so. The name is printed in the
-	 * line, and it would be possible to go looking for it — but "Someone looks at Another" is
+	 * line, and it would be possible to go looking for it – but "Someone looks at Another" is
 	 * written by Someone, and a camera that reads the wrong name cuts to the wrong person, which is
 	 * worse than not cutting at all. The server marks its own messages; anything it has not marked
 	 * is left alone.
@@ -192,7 +192,7 @@ public final class ChatWatcher {
 	 *
 	 * <p>First, not best: the server puts the author's tag on the name it prints at the front of
 	 * the line, so the author comes before anybody the message happens to mention. A tag naming
-	 * somebody who is not a player — a horse, a hostile mob — is not an author and is skipped.
+	 * somebody who is not a player – a horse, a hostile mob – is not an author and is skipped.
 	 */
 	@Nullable
 	private static UUID findAuthorTag(Text node) {

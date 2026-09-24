@@ -103,7 +103,7 @@ public class CinemaConfig {
 	/**
 	 * Back the camera off until every participant is inside the frame. Without it a shot is only
 	 * as wide as the group's radius suggests, and people standing off to one side fall out of
-	 * view — worse in a room, where the walls cap how far back the camera may sit.
+	 * view – worse in a room, where the walls cap how far back the camera may sit.
 	 */
 	public boolean keepEveryoneInFrame = true;
 	/** Hide signs, frames and other clutter that ends up right in front of the lens. */
@@ -144,7 +144,7 @@ public class CinemaConfig {
 	 * Whether two people stand on close enough levels to belong to the same scene.
 	 *
 	 * <p>Lives here rather than in the director because the height limit is not only about framing.
-	 * Everything that lets somebody claim the camera — the scene, a voice, a line of chat — has to
+	 * Everything that lets somebody claim the camera – the scene, a voice, a line of chat – has to
 	 * ask the same question, or the limit holds the floor above out of the shot while still letting
 	 * it cut the camera away.
 	 */
@@ -195,7 +195,7 @@ public class CinemaConfig {
 	 * Hold a frame until asked for another one, instead of changing it when its time is up.
 	 *
 	 * <p>Only applies while the camera is filming the room. The moment somebody has the floor the
-	 * camera cuts to them as usual — being told who is speaking is the whole point of those modes,
+	 * camera cuts to them as usual – being told who is speaking is the whole point of those modes,
 	 * and a manual key cannot be faster than that. What this switches off is the part that happens
 	 * on a timer: the change of angle every eight seconds or so, chosen at random.
 	 *
@@ -220,12 +220,12 @@ public class CinemaConfig {
 	public boolean reactToOwnChat = true;
 	/** How long a message holds the frame before its length is counted, in seconds. */
 	public float chatHoldSeconds = 0.8f;
-	/** Extra seconds per hundred characters — roughly how long the message takes to read. */
+	/** Extra seconds per hundred characters – roughly how long the message takes to read. */
 	public float chatSecondsPer100 = 5.0f;
 	/** However long the message, the frame is never held past this, in seconds. */
 	public float chatMaxSeconds = 8.0f;
 	/**
-	 * Messages containing any of these are ignored — out-of-character asides, a global channel,
+	 * Messages containing any of these are ignored – out-of-character asides, a global channel,
 	 * whatever a given server uses. Matched anywhere in the line, because the server's own prefix
 	 * comes first and the marker sits after it. Empty by default: nothing is guessed for you.
 	 */
@@ -234,7 +234,7 @@ public class CinemaConfig {
 	// ---- misc -------------------------------------------------------------------------------
 	/** Show a small toast/action bar note when the mode changes. */
 	public boolean announceToggle = true;
-	/** Drop out of cinema mode the moment we take damage — nobody ambushes you mid-scene. */
+	/** Drop out of cinema mode the moment we take damage – nobody ambushes you mid-scene. */
 	public boolean exitOnDamage = true;
 
 	// ---- scene profiles ---------------------------------------------------------------------
@@ -246,11 +246,11 @@ public class CinemaConfig {
 	/**
 	 * Which generation of defaults this file was written by. Gson keeps whatever a stored file
 	 * says, so a timing whose default changes would go on behaving the old way for everybody who
-	 * already has a config — silently, and looking exactly like the fix never landed.
+	 * already has a config – silently, and looking exactly like the fix never landed.
 	 *
 	 * <p>It starts at zero and nowhere else. Gson runs field initialisers and only overwrites what
 	 * the json actually contains, so a field defaulting to the current version would read as
-	 * up-to-date in every file written before the field existed — which is precisely the set of
+	 * up-to-date in every file written before the field existed – which is precisely the set of
 	 * files that need migrating.
 	 */
 	public int configVersion;
@@ -301,7 +301,7 @@ public class CinemaConfig {
 	}
 
 	/**
-	 * Puts every setting back to what a fresh install would have — except the saved scene
+	 * Puts every setting back to what a fresh install would have – except the saved scene
 	 * profiles, which are the player's own work and would be painful to lose to a misclick.
 	 *
 	 * <p>Reflection over the public fields rather than three dozen assignments: adding a new
@@ -401,7 +401,7 @@ public class CinemaConfig {
 	 *
 	 * <p>Only the settings whose <em>meaning</em> changed are touched, and only once. The speaker
 	 * timings are the case in point: the first playtest showed the camera was far too slow to
-	 * follow a conversation, and the fix was mostly a matter of shorter defaults — which would
+	 * follow a conversation, and the fix was mostly a matter of shorter defaults – which would
 	 * have reached nobody who already had a config, because a stored value always wins.
 	 */
 	private void migrate() {

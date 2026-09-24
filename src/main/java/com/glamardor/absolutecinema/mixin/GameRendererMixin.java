@@ -24,7 +24,7 @@ public class GameRendererMixin {
 
 	/**
 	 * Straight after the world (and its entity outlines) are on the main framebuffer, and before
-	 * any GUI is drawn — so the bars and HUD never get blurred or graded.
+	 * any GUI is drawn – so the bars and HUD never get blurred or graded.
 	 */
 	@Inject(method = "render", at = @At(value = "INVOKE",
 			target = "Lnet/minecraft/client/render/WorldRenderer;drawEntityOutlinesFramebuffer()V",
@@ -33,7 +33,7 @@ public class GameRendererMixin {
 		CinemaPostProcessor.render(this.client, this.client.getFramebuffer());
 	}
 
-	/** No first-person arm in a cutscene — and in the directed modes it would hang in mid air. */
+	/** No first-person arm in a cutscene – and in the directed modes it would hang in mid air. */
 	@Inject(method = "renderHand", at = @At("HEAD"), cancellable = true)
 	private void absolutecinema$hideHand(float tickProgress, boolean sleeping, Matrix4f positionMatrix, CallbackInfo ci) {
 		if (!CinemaManager.isVisible()) {
@@ -47,7 +47,7 @@ public class GameRendererMixin {
 
 	/**
 	 * The walking sway. It is applied to the view matrix rather than to the camera, which is why
-	 * smoothing the camera position never removed it — the picture kept rocking from side to side
+	 * smoothing the camera position never removed it – the picture kept rocking from side to side
 	 * on every step, and no camera on a real set does that.
 	 */
 	@Inject(method = "bobView", at = @At("HEAD"), cancellable = true)

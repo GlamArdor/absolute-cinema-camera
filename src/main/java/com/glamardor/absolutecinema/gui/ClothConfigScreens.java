@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 /**
  * Cloth Config version of the settings screen. Loaded reflectively-by-classloading only when
- * Cloth is installed — never touch this class without checking first.
+ * Cloth is installed – never touch this class without checking first.
  */
 final class ClothConfigScreens {
 	/** Sliders are integers in Cloth, so fractions are edited as percent. */
@@ -48,7 +48,7 @@ final class ClothConfigScreens {
 		builder.setTransparentBackground(true);
 		// One long list with the categories down the side, rather than tabs. Tabbed, the search box
 		// only ever looks inside the tab you are standing in, so finding a setting means knowing
-		// which of six tabs it lives in first — which is exactly what a search is for.
+		// which of six tabs it lives in first – which is exactly what a search is for.
 		builder.setGlobalized(true);
 		builder.setGlobalizedExpanded(true);
 

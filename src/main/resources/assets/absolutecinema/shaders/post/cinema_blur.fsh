@@ -42,7 +42,7 @@ const int TAPS = 12;
 
 // A real gaussian, sampled evenly across its own width. Scaling the offsets of a fixed
 // small-kernel gaussian instead would spread the taps apart and print several distinct copies of
-// the frame — which reads as ghosting, not as blur.
+// the frame – which reads as ghosting, not as blur.
 void main() {
     float drive = Direction.z > 0.5 ? Extra2.z : Extra.y;
     float sigma = 1.0 + drive * 9.0;

@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  * <p>The radius is the single setting people most often set wrong, because a number in blocks says
  * nothing about a room: in a tavern, fourteen blocks quietly takes in the table upstairs and the
  * two people by the door, and the camera obediently backs off to hold a building. What it needs is
- * not a better explanation but a look at it — so while the settings are open, the shape is drawn
+ * not a better explanation but a look at it – so while the settings are open, the shape is drawn
  * around the player in green, and dragging the slider makes it grow and shrink.
  *
  * <p>What is drawn is the actual test, not a friendly approximation of it: a sphere of the scene
@@ -59,7 +59,7 @@ public final class SceneDome {
 	 * <p>Long enough to close the menu and look around: knowing whether a radius is right means
 	 * seeing who is inside it, and who is inside it is a question about the room, not about the
 	 * slider. It is also why the dome appears when a value changes rather than whenever the
-	 * settings happen to be open — the rest of the time it would just be in the way.
+	 * settings happen to be open – the rest of the time it would just be in the way.
 	 */
 	private static final long HOLD_MILLIS = 5000L;
 
@@ -80,7 +80,7 @@ public final class SceneDome {
 	 * The one screen the dome belongs to.
 	 *
 	 * <p>A plain "a screen is open" flag was not enough: it stayed on for the pause menu, another
-	 * mod's settings, anything at all — and since the dome is what suppresses the background blur,
+	 * mod's settings, anything at all – and since the dome is what suppresses the background blur,
 	 * every menu in the game lost its blur along with it. The screen is therefore held by identity.
 	 */
 	@Nullable
@@ -101,7 +101,7 @@ public final class SceneDome {
 	 * Live readings from the two sliders, when a screen that has them is open.
 	 *
 	 * <p>Cloth only writes a value into the config when the player presses save, so a dome drawn
-	 * from the config would sit still while the slider moves and then jump at the end — which is
+	 * from the config would sit still while the slider moves and then jump at the end – which is
 	 * the one moment the picture is no longer needed. These read the widget itself, so the shape
 	 * follows the drag.
 	 */
@@ -114,7 +114,7 @@ public final class SceneDome {
 	}
 
 	/**
-	 * True while our own settings are the screen in front — that one keeps a clear background, so
+	 * True while our own settings are the screen in front – that one keeps a clear background, so
 	 * the room can be seen while it is being set up. Every other screen in the game is left alone.
 	 */
 	public static boolean isShowing() {
@@ -146,7 +146,7 @@ public final class SceneDome {
 	public static void register() {
 		// After the entities, not after the translucent terrain. Fabric hands out the shared vertex
 		// buffers only up to the block outline and drops them afterwards, so anything drawn later
-		// has nowhere to go — the dome silently never appeared.
+		// has nowhere to go – the dome silently never appeared.
 		WorldRenderEvents.AFTER_ENTITIES.register(SceneDome::render);
 	}
 
@@ -246,17 +246,17 @@ public final class SceneDome {
 		 *
 		 * A tinted skin was tried twice and abandoned. As debug quads it reached the screen before
 		 * the entities did, so the near wall wrote itself into the depth buffer and everybody
-		 * behind it was discarded. Moved into the pass translucent parts of entities use — which
-		 * should have been the right home for it — it went on failing to appear from outside under
+		 * behind it was discarded. Moved into the pass translucent parts of entities use – which
+		 * should have been the right home for it – it went on failing to appear from outside under
 		 * a shader pack. Chasing it further would have meant tuning against one pack's private
 		 * decisions about which geometry it will carry, which is not a thing that stays fixed.
 		 *
 		 * A mesh dense enough reads as the same green volume, is drawn with the layer block
-		 * outlines and hitboxes use — which every pack must support, since targeting blocks depends
-		 * on it — and hides nobody, a line having no area to hide anything behind.
+		 * outlines and hitboxes use – which every pack must support, since targeting blocks depends
+		 * on it – and hides nobody, a line having no area to hide anything behind.
 		 */
 		VertexConsumer buffer = consumers.getBuffer(RenderLayer.getLines());
-		// The ring at the player's own feet is the one that answers the question — who is inside —
+		// The ring at the player's own feet is the one that answers the question – who is inside –
 		// so the rings are laid out from there outwards rather than from the bottom up.
 		for (int ring = -RINGS; ring <= RINGS; ring++) {
 			double latitude = top * ring / RINGS;
@@ -275,7 +275,7 @@ public final class SceneDome {
 	 * One horizontal ring.
 	 *
 	 * <p>The dome is a cage and not a surface on purpose. A filled sphere is easy to see and hides
-	 * everybody inside it, which defeats the point — the question being asked is who is in the
+	 * everybody inside it, which defeats the point – the question being asked is who is in the
 	 * scene, and that cannot be answered through a green wall.
 	 */
 	private static void band(VertexConsumer buffer, MatrixStack.Entry entry, double radius,

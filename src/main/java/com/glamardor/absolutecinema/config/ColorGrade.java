@@ -12,7 +12,7 @@ import net.minecraft.text.Text;
 public enum ColorGrade {
 	/**
 	 * Order matters: this is the order the settings screen lists them in and the order the
-	 * cycle key walks through, so the presets are grouped by the kind of look they give —
+	 * cycle key walks through, so the presets are grouped by the kind of look they give –
 	 * bright, then distorted, then colour-led, then dark, then stylised stock.
 	 */
 	NONE("none",
@@ -33,7 +33,7 @@ public enum ColorGrade {
 
 	/**
 	 * A study lit by candles: gold on the faces, warm lifted shadows, and a visible breath in
-	 * the light. Deliberately not a dark room — the vignette is only a hint.
+	 * the light. Deliberately not a dark room – the vignette is only a hint.
 	 */
 	NOBLE_STUDY("noble_study",
 			new float[] { 0.052f, 0.022f, 0.000f },
@@ -108,8 +108,8 @@ public enum ColorGrade {
 			0.22f, 0.0f, 0.0f),
 
 	/**
-	 * Something is being worked. Violet shadows against cyan light — the teal-and-magenta split
-	 * that reads as "not natural light" — pushed saturation, a hard glow, and the picture
+	 * Something is being worked. Violet shadows against cyan light – the teal-and-magenta split
+	 * that reads as "not natural light" – pushed saturation, a hard glow, and the picture
 	 * fringing and pulsing at the edges.
 	 */
 	ENCHANTMENT("enchantment",
@@ -121,7 +121,7 @@ public enum ColorGrade {
 
 	// ---- dark and unpleasant --------------------------------------------------------------
 
-	/** Flat, cold, slightly milky — a grey morning through a window. */
+	/** Flat, cold, slightly milky – a grey morning through a window. */
 	OVERCAST_MORNING("overcast_morning",
 			new float[] { 0.045f, 0.052f, 0.062f },
 			new float[] { 1.02f, 1.01f, 0.99f },
@@ -146,7 +146,7 @@ public enum ColorGrade {
 
 	/**
 	 * Plotting after dark: the room sunk in blue-green, one warm candle holding the faces.
-	 * Saturation stays above 1 on purpose — pulling it down was what made this look colourless.
+	 * Saturation stays above 1 on purpose – pulling it down was what made this look colourless.
 	 */
 	CONSPIRACY("conspiracy",
 			new float[] { -0.030f, 0.020f, 0.026f },
@@ -203,7 +203,7 @@ public enum ColorGrade {
 	private final float contrast;
 	private final float vignette;
 	private final float grain;
-	/** Glow bled out of the highlights — halation, in film terms. */
+	/** Glow bled out of the highlights – halation, in film terms. */
 	private final float bloom;
 	/** Radial split of the red and blue channels, in screen widths. */
 	private final float aberration;
@@ -211,7 +211,7 @@ public enum ColorGrade {
 	private final float flicker;
 	/** How far the whole image swims, in screen widths. */
 	private final float warp;
-	/** Strength of a second, offset copy of the picture — seeing double. */
+	/** Strength of a second, offset copy of the picture – seeing double. */
 	private final float doubleVision;
 
 	ColorGrade(String id, float[] lift, float[] gamma, float[] gain,
@@ -307,7 +307,7 @@ public enum ColorGrade {
 	 * Whether depth of field suits this look at all.
 	 *
 	 * <p>Softening the background reads as dreamlike or intimate, which fits an altered state or
-	 * a close conversation — and fights everything a bright, crisp room shot is trying to do. So
+	 * a close conversation – and fights everything a bright, crisp room shot is trying to do. So
 	 * the bright and stylised presets keep the whole frame sharp even with the filter switched on.
 	 */
 	public boolean allowsDepthOfField() {

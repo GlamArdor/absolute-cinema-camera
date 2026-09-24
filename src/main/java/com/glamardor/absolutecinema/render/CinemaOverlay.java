@@ -21,7 +21,7 @@ public final class CinemaOverlay {
 				|| CinemaManager.getTransition() <= 0.35f) {
 			return false;
 		}
-		// F3 stays visible while filming — otherwise there is no way to read the framerate.
+		// F3 stays visible while filming – otherwise there is no way to read the framerate.
 		MinecraftClient client = MinecraftClient.getInstance();
 		return !client.getDebugHud().shouldShowDebugHud();
 	}
@@ -63,7 +63,7 @@ public final class CinemaOverlay {
 	}
 
 	/**
-	 * Mode and grade changes, in the spot the vanilla action bar would use — that one is hidden
+	 * Mode and grade changes, in the spot the vanilla action bar would use – that one is hidden
 	 * along with the rest of the HUD, so switching a preset would otherwise be silent.
 	 */
 	private static void drawNotice(DrawContext context, int screenWidth, int screenHeight) {

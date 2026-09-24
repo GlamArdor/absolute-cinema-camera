@@ -72,7 +72,7 @@ public final class CinemaManager {
 
 	/**
 	 * Combat interrupt: kills the mode with no fade at all. The next frame is already pure
-	 * first person — bars, filters and the directed camera all gone at once.
+	 * first person – bars, filters and the directed camera all gone at once.
 	 */
 	public static void abort() {
 		active = false;
@@ -143,7 +143,7 @@ public final class CinemaManager {
 		return true;
 	}
 
-	/** Steps to the next saved profile — the one-key version of the above. */
+	/** Steps to the next saved profile – the one-key version of the above. */
 	public static void cycleProfile() {
 		var next = CinemaConfig.get().nextProfile();
 		if (next == null) {
@@ -183,9 +183,9 @@ public final class CinemaManager {
 	/**
 	 * Widens or narrows the scene by a block, from a key rather than the settings.
 	 *
-	 * <p>Who is in the scene is the one setting that has to be changed while a scene is running —
+	 * <p>Who is in the scene is the one setting that has to be changed while a scene is running –
 	 * somebody joins the conversation from across the room, somebody at the next table is being
-	 * filmed by mistake — and opening a menu to do it means leaving the scene to fix the scene.
+	 * filmed by mistake – and opening a menu to do it means leaving the scene to fix the scene.
 	 * The dome draws itself for a few seconds after any change of radius, so this also puts the
 	 * picture up: the ring on the floor is the answer to "who is in shot".
 	 */

@@ -10,8 +10,8 @@ import java.util.List;
  * things up once, save them under a name, and from then on one command or one keypress puts the
  * whole rig into that state.
  *
- * <p>Only the fields worth switching per scene live here. Everything else — smoothing, shot
- * lengths, scene radius — stays global, because those are preferences rather than staging.
+ * <p>Only the fields worth switching per scene live here. Everything else – smoothing, shot
+ * lengths, scene radius – stays global, because those are preferences rather than staging.
  */
 public class SceneProfile {
 	public String name = "scene";
@@ -69,7 +69,7 @@ public class SceneProfile {
 	}
 
 	/**
-	 * The profiles a fresh install starts with — examples of the idea rather than a fixed set,
+	 * The profiles a fresh install starts with – examples of the idea rather than a fixed set,
 	 * covering the situations a roleplay server runs into most.
 	 */
 	public static List<SceneProfile> defaults() {

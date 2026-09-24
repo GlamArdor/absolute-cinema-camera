@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Players answer for themselves whether their armour and held items are drawn, without asking the
- * renderer they inherit from — so the same answer has to be given here, or a faded passer-by would
+ * renderer they inherit from – so the same answer has to be given here, or a faded passer-by would
  * keep a full set of armour hanging in the air where they used to be.
  */
 @Mixin(PlayerEntityRenderer.class)

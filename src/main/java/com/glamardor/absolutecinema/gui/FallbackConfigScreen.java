@@ -46,7 +46,7 @@ public class FallbackConfigScreen extends Screen {
 	/**
 	 * Leaves the world visible behind this screen while the scene radius is being shown.
 	 *
-	 * <p>A screen opened in game does not blur what is behind it — it lays a dark gradient over the
+	 * <p>A screen opened in game does not blur what is behind it – it lays a dark gradient over the
 	 * whole window, which is a different method from the blurring a screen does over the menus, and
 	 * it was covering the very thing the radius slider is for.
 	 */

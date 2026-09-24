@@ -12,12 +12,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * The same for paintings, item frames and text displays — the other half of what tends to be
+ * The same for paintings, item frames and text displays – the other half of what tends to be
  * hanging on a roleplay server's walls.
  *
  * <p>Participants are never hidden, whatever they are standing in front of: cutting somebody out
  * of the scene to improve the view of it would be missing the point. Passers-by are another
- * matter, and they get the fade rather than this — see {@link PlayerFade}.
+ * matter, and they get the fade rather than this – see {@link PlayerFade}.
  */
 @Mixin(EntityRenderDispatcher.class)
 public class EntityRenderDispatcherMixin {
@@ -26,7 +26,7 @@ public class EntityRenderDispatcherMixin {
 			CallbackInfoReturnable<Boolean> cir) {
 		if (entity instanceof LivingEntity) {
 			// People are faded rather than cut, and only once the fade has run out is the body
-			// dropped altogether — at that point it is a smear over the lens and nothing else.
+			// dropped altogether – at that point it is a smear over the lens and nothing else.
 			if (PlayerFade.hidden(entity)) {
 				cir.setReturnValue(false);
 			}

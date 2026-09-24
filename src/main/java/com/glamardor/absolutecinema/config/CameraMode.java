@@ -17,7 +17,7 @@ public enum CameraMode {
 	DIALOGUE("dialogue"),
 	/** Locked off where you left it. The camera only turns to follow the scene. */
 	TRIPOD("tripod"),
-	/** Travels alongside the scene, keeping pace — for walking, processions, rides. */
+	/** Travels alongside the scene, keeping pace – for walking, processions, rides. */
 	SIDE_TRACK("side_track");
 
 	private final String id;
@@ -48,7 +48,7 @@ public enum CameraMode {
 	}
 
 	/**
-	 * True when this mode wants to know who is holding the floor — by voice on Simple Voice Chat,
+	 * True when this mode wants to know who is holding the floor – by voice on Simple Voice Chat,
 	 * or by writing in chat. The dynamic camera is included but asks the config first: following a
 	 * speaker is what separates it from the mode named after doing so.
 	 */

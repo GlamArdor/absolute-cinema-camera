@@ -191,7 +191,7 @@ public final class CinemaPostProcessor {
 					.build();
 		}
 		if (projection == null) {
-			// Same parameters vanilla's ShaderLoader uses for post effects — invertY stays false.
+			// Same parameters vanilla's ShaderLoader uses for post effects – invertY stays false.
 			projection = new ProjectionMatrix2("absolute cinema", 0.1f, 1000.0f, false);
 		}
 		if (configBuffer == null) {

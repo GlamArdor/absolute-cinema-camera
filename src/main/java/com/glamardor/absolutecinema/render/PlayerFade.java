@@ -23,7 +23,7 @@ import net.minecraft.util.math.Vec3d;
  * they are that close.
  *
  * <p>Participants are never faded. Somebody in the scene who happens to be nearest the camera is a
- * foreground, and a foreground is a shot — cutting them out would be filming the scene worse.
+ * foreground, and a foreground is a shot – cutting them out would be filming the scene worse.
  */
 public final class PlayerFade {
 	/**
@@ -36,7 +36,7 @@ public final class PlayerFade {
 	 * Below this the armour, held items and cape stop being drawn with the body.
 	 *
 	 * <p>They are drawn by feature renderers, each picking its own render layer, and a cutout layer
-	 * does not blend — so they cannot be faded along with the skin and would hang in the air as a
+	 * does not blend – so they cannot be faded along with the skin and would hang in the air as a
 	 * solid suit around a ghost. Taken off once the body is faint enough for the swap not to read
 	 * as armour vanishing off someone standing in plain sight.
 	 */
@@ -45,7 +45,7 @@ public final class PlayerFade {
 	/**
 	 * Where a body's reading is kept between the tick that measures it and the frame that draws
 	 * it. Rendering is handed a render state and never the entity, and the fade is a question
-	 * about the entity — so the answer travels on the state.
+	 * about the entity – so the answer travels on the state.
 	 */
 	public static final RenderStateDataKey<Float> OPACITY =
 			RenderStateDataKey.create(() -> "absolutecinema:opacity");

@@ -30,7 +30,7 @@ float linearDepth(float rawDepth) {
     return (2.0 * near * far) / (far + near - z * (far - near));
 }
 
-// Integer hash. The usual fract(sin(dot(...))) breaks down once the coordinates get large —
+// Integer hash. The usual fract(sin(dot(...))) breaks down once the coordinates get large –
 // float precision collapses and the "noise" turns into diagonal bands crawling across the frame.
 uint hashInt(uint x) {
     x ^= x >> 17;
@@ -65,7 +65,7 @@ void main() {
 
     // --- chromatic aberration ----------------------------------------------------------
     // The red and blue channels are sampled slightly toward/away from the centre, so the
-    // fringing grows with the distance from it — the way a real fast lens misbehaves.
+    // fringing grows with the distance from it – the way a real fast lens misbehaves.
     vec3 sharp;
     if (Extra.w > 0.00001) {
         vec2 fromCentre = uv - 0.5;

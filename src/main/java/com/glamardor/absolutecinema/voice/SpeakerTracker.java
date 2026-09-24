@@ -22,7 +22,7 @@ public final class SpeakerTracker {
 	 * Attention won by writing rather than by talking: who, when they wrote, and how long the
 	 * frame is theirs for.
 	 *
-	 * <p>Kept apart from the voices on purpose. Speech is a duration — it keeps arriving, and the
+	 * <p>Kept apart from the voices on purpose. Speech is a duration – it keeps arriving, and the
 	 * timestamp keeps moving, which is what the hold and handover windows are measuring. A message
 	 * is an instant with a reading time attached, and it can never be allowed to outrank somebody
 	 * who is actually talking: were both in one table, the newest message would always look like
@@ -93,7 +93,7 @@ public final class SpeakerTracker {
 	 * open, is otherwise the only thing the camera ever sees; past maxFocusSeconds the frame goes
 	 * to whoever else is speaking, or back to the room for breakSeconds if nobody is.
 	 *
-	 * <p><code>eligible</code> is who the camera is allowed to film at all — near enough, and on the
+	 * <p><code>eligible</code> is who the camera is allowed to film at all – near enough, and on the
 	 * same storey. It is asked here rather than afterwards on purpose: a table talking downstairs
 	 * would otherwise keep winning the pick and then be thrown away, and the answer would be "nobody
 	 * is speaking" while somebody in the room plainly is.
@@ -122,7 +122,7 @@ public final class SpeakerTracker {
 				// Still mid-sentence: nobody interrupts them, however loudly they try.
 				chosen = current;
 			} else if (freshest != null) {
-				// They have stopped and somebody else is talking — the frame is the other's.
+				// They have stopped and somebody else is talking – the frame is the other's.
 				chosen = freshest;
 			} else if (silence <= hold) {
 				// The room has simply gone quiet; hold the last speaker a moment longer.
@@ -141,8 +141,8 @@ public final class SpeakerTracker {
 
 		if (chosen == null) {
 			held = null;
-			// Nobody is talking. Whoever wrote most recently — and is still inside their reading
-			// time — has the frame instead.
+			// Nobody is talking. Whoever wrote most recently – and is still inside their reading
+			// time – has the frame instead.
 			return pickWritten(now, eligible);
 		}
 		if (!chosen.equals(held)) {

@@ -11,13 +11,13 @@ import org.jetbrains.annotations.Nullable;
  * Clears the lens.
  *
  * <p>The camera is clipped against solid geometry, but a sign, a banner or an item frame has no
- * collision at all, so nothing stops the camera ending up with its nose against one — and a
+ * collision at all, so nothing stops the camera ending up with its nose against one – and a
  * signboard half a block from the lens is the entire picture. Since the camera cannot be pushed
  * out of something it does not collide with, the clutter is hidden instead: anything in front of
  * the lens and closer than the configured distance is simply not drawn for that frame.
  *
  * <p>Only the directed modes, where the mod is flying the camera and the player cannot step
- * aside — in first person, things disappearing in front of you would just be confusing.
+ * aside – in first person, things disappearing in front of you would just be confusing.
  */
 public final class LensClearing {
 	/**
@@ -50,7 +50,7 @@ public final class LensClearing {
 	 * at all, 1 when it is on the glass.
 	 *
 	 * <p>The clutter hiding only needs to know whether this is above zero. The people fading needs
-	 * the number itself, because a person is not switched off the moment they qualify — they are
+	 * the number itself, because a person is not switched off the moment they qualify – they are
 	 * faded by however much of the way in they are.
 	 */
 	public static float inTheWay(Vec3d point, double radius) {

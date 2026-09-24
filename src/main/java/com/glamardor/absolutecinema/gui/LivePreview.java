@@ -20,7 +20,7 @@ import java.util.List;
  * time. So the widgets are read every tick and written straight into the live config, and the
  * picture behind the menu changes as they move.
  *
- * <p>That leaves the promise Cloth makes — that escape discards your edits — which is worth
+ * <p>That leaves the promise Cloth makes – that escape discards your edits – which is worth
  * keeping. The config is copied when the screen opens and copied back when it closes without a
  * save, so a preview stays a preview.
  */
