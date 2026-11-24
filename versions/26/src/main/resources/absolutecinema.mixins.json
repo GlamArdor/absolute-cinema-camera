@@ -1,0 +1,18 @@
+{
+	"required": true,
+	"package": "com.glamardor.absolutecinema.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"BlockEntityRenderDispatcherMixin",
+		"CameraMixin",
+		"EntityRenderDispatcherMixin",
+		"GameRendererMixin",
+		"InGameHudMixin",
+		"LivingEntityRendererMixin",
+		"PlayerEntityRendererMixin",
+		"ScreenMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

@@ -1,0 +1,77 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = "${project.mod_version}+26"
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+loom {
+	runs {
+		client {
+			// Development only: makes the post processor narrate what it is doing.
+			vmArg "-Dabsolutecinema.debug=true"
+			// Skip the menus and drop straight into the test world.
+			programArgs "--quickPlaySingleplayer", "New World"
+		}
+	}
+}
+
+repositories {
+	maven {
+		name = 'Terraformers'
+		url = 'https://maven.terraformersmc.com/'
+	}
+	maven {
+		name = 'Shedaniel'
+		url = 'https://maven.shedaniel.me/'
+	}
+	maven {
+		name = 'Henkelmax'
+		url = 'https://maven.maxhenkel.de/repository/public'
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Cloth Config – optional at runtime, compiled against.
+	compileOnly("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+		exclude(group: "net.fabricmc.fabric-api")
+	}
+	localRuntime("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+		exclude(group: "net.fabricmc.fabric-api")
+	}
+
+	// Mod Menu – optional at runtime.
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	localRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+	// Simple Voice Chat plugin API – plain java, no minecraft classes.
+	compileOnly "de.maxhenkel.voicechat:voicechat-api:${project.voicechat_api_version}"
+}
+
+processResources {
+	inputs.property "version", project.version
+	inputs.property "minecraft_range", project.minecraft_range
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version, "minecraft_range": project.minecraft_range
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
